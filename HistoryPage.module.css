@@ -1,0 +1,88 @@
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 5rem;
+}
+
+.hero { margin-bottom: 1.75rem; }
+
+.h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 32px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.sub {
+  font-size: 15px;
+  color: var(--text2);
+  line-height: 1.65;
+}
+
+/* ── Summary cards ── */
+.summaryRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 0;
+}
+
+.summaryCard {
+  text-align: center;
+  padding: 1.25rem 1rem !important;
+  margin-bottom: 0 !important;
+}
+
+.summaryVal {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.summaryLbl {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+
+/* ── Chart ── */
+.chartWrap { margin: 0 -0.25rem; }
+
+/* ── History list ── */
+.histItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--border);
+}
+.histItem:last-child { border-bottom: none; }
+
+.histMeta { margin-left: auto; text-align: right; }
+.histDate  { font-size: 13px; color: var(--text2); }
+.histConf  { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+/* ── Tooltip ── */
+.tooltip {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 10px 14px;
+  box-shadow: var(--shadow);
+}
+.ttDate  { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+.ttLevel { font-size: 14px; font-weight: 700; }
+.ttConf  { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+/* ── Empty state ── */
+.empty { text-align: center; padding: 3rem 1rem; }
+.emptyIcon  { font-size: 44px; margin-bottom: 12px; }
+.emptyTitle { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+.emptySub   { font-size: 14px; color: var(--text2); line-height: 1.6; }
+
+@media (max-width: 520px) {
+  .page       { padding: 1.5rem 1rem 4rem; }
+  .h1         { font-size: 26px; }
+  .summaryRow { grid-template-columns: 1fr 1fr; }
+}

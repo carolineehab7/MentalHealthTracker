@@ -1,0 +1,63 @@
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Design tokens ── */
+:root {
+  --bg:          #f0ede8;
+  --bg2:         #e8e4de;
+  --card:        #faf9f7;
+  --border:      rgba(28, 25, 22, 0.10);
+  --border-md:   rgba(28, 25, 22, 0.18);
+  --text:        #1c1916;
+  --text2:       #6b6560;
+  --text3:       #9c968f;
+  --accent:      #c8440a;
+  --accent-l:    #fff0ea;
+  --blue:        #1d4ed8;
+  --blue-l:      #eff6ff;
+  --ok:          #15803d;
+  --ok-bg:       #f0fdf4;
+  --warn:        #b45309;
+  --warn-bg:     #fffbeb;
+  --danger:      #b91c1c;
+  --danger-bg:   #fef2f2;
+  --r:           10px;
+  --rl:          16px;
+  --shadow:      0 2px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar       { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 3px; }
+
+/* ── Range slider ── */
+input[type='range'] {
+  -webkit-appearance: none;
+  width: 100%; height: 5px;
+  border-radius: 3px;
+  background: var(--bg2);
+  outline: none;
+  cursor: pointer;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2.5px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  cursor: pointer;
+  transition: transform .15s;
+}
+input[type='range']::-webkit-slider-thumb:hover { transform: scale(1.15); }

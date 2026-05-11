@@ -1,0 +1,91 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 230px;
+  flex-shrink: 0;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.brandIcon { font-size: 28px; line-height: 1; }
+.brandName { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.brandSub  { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+/* ── Nav links ── */
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border-radius: var(--r);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text2);
+  text-decoration: none;
+  transition: all 0.14s;
+}
+.navLink:hover { background: var(--bg); color: var(--text); }
+.navLinkActive  { background: var(--accent-l) !important; color: var(--accent) !important; }
+
+/* ── Footer ── */
+.footer {
+  margin-top: auto;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.modelBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--blue);
+  background: var(--blue-l);
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+.disclaimer { font-size: 10.5px; color: var(--text3); line-height: 1.6; }
+
+/* ── Main ── */
+.main { flex: 1; overflow-y: auto; min-width: 0; }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .shell    { flex-direction: column; }
+  .sidebar  {
+    width: 100%; height: auto; position: static;
+    flex-direction: row; align-items: center;
+    padding: 0.75rem 1rem;
+    border-right: none; border-bottom: 1px solid var(--border);
+  }
+  .brand  { margin-bottom: 0; padding-bottom: 0; border-bottom: none; margin-right: auto; }
+  .nav    { flex-direction: row; flex: unset; }
+  .footer { display: none; }
+}
