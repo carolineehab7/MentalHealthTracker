@@ -20,7 +20,7 @@ from flask      import Flask, request, jsonify, send_file
 from flask_cors import CORS
 
 # ── import shared constants + inference function from ml/ ──
-ML_DIR = os.path.join(os.path.dirname(__file__), "..", "ml")
+ML_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 sys.path.insert(0, ML_DIR)
 from train_model import (
     predict_stress,
