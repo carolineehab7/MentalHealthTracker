@@ -312,8 +312,10 @@ def export_pdf():
         BOLD_FONT = "Times-Bold"
         ITALIC_FONT = "Times-Italic"
         BASE_SIZE = 10
+        BASE_COLOR = "#1f2937"
+        ASSET_DIR = os.path.abspath(os.path.join(ML_DIR, "..", "src", "assets"))
 
-        def P(text, size=BASE_SIZE, bold=False, color="#1c1916", space=8):
+        def P(text, size=BASE_SIZE, bold=False, color=BASE_COLOR, space=8):
             return Paragraph(text, ParagraphStyle(
                 "x", fontSize=size, leading=size + 2, spaceAfter=space,
                 fontName=BOLD_FONT if bold else BODY_FONT,
@@ -322,14 +324,19 @@ def export_pdf():
 
         small = ParagraphStyle(
             "small", parent=styles["Normal"], fontSize=BASE_SIZE - 1,
-            leading=BASE_SIZE + 1, textColor=colors.HexColor("#1c1916"),
+            leading=BASE_SIZE + 1, textColor=colors.HexColor(BASE_COLOR),
             fontName=BODY_FONT,
         )
         rec_style = ParagraphStyle(
             "rec", parent=styles["Normal"], fontSize=BASE_SIZE,
             leading=BASE_SIZE + 4,
-            textColor=colors.HexColor("#1f2937"), alignment=TA_CENTER,
+            textColor=colors.HexColor(BASE_COLOR), alignment=TA_CENTER,
             fontName=BODY_FONT, italicFontName=ITALIC_FONT,
+        )
+        help_title = ParagraphStyle(
+            "help_title", parent=styles["Normal"], fontSize=BASE_SIZE + 2,
+            leading=BASE_SIZE + 4, textColor=colors.HexColor(BASE_COLOR),
+            fontName=BOLD_FONT,
         )
         def short_label(text: str, max_len: int = 22) -> str:
             if not text:
@@ -475,13 +482,16 @@ def export_pdf():
 
         def icon_for_category(category: str) -> str:
             key = (category or "").lower()
-            icon_dir = os.path.join(ML_DIR, "assets", "rec_icons")
+            icon_dir = ASSET_DIR
             mapping = {
-                "support": "support.png",
-                "help": "help.png",
-                "sleep": "sleep.png",
-                "load": "break.png",
-                "break": "break.png",
+                "support": "huddle.png",
+                "network": "huddle.png",
+                "help": "helping-hand.png",
+                "professional": "helping-hand.png",
+                "sleep": "napping.png",
+                "nap": "napping.png",
+                "load": "work-load.png",
+                "break": "work-load.png",
             }
             for token, fname in mapping.items():
                 if token in key:
@@ -533,12 +543,12 @@ def export_pdf():
 
         story += [
             P("Depression indications", 18, bold=True, space=4),
-            P(f"Generated: {ts}", BASE_SIZE - 1, color="#9c968f", space=14),
+            P(f"Generated: {ts}", BASE_SIZE - 1, color=BASE_COLOR, space=14),
             HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e8e4de")),
             Spacer(1, 0.4*cm),
         ]
 
-        level_color = {"No Depression": "#15803d", "Depression": "#b91c1c"}.get(level, "#000")
+        level_color = {"No Depression": "#15803d", "Depression": "#b91c1c"}.get(level, BASE_COLOR)
         story.append(P(f'Prediction: <font color="{level_color}"><b>{level}</b></font>'
                    f'&nbsp;&nbsp;|&nbsp;&nbsp;Confidence: <b>{conf}%</b>', 12, space=14))
 
@@ -547,7 +557,7 @@ def export_pdf():
         if hist:
             story += [hist, Spacer(1, 0.5*cm)]
         else:
-            story += [P("No probability data available.", 10, color="#9c968f", space=10)]
+            story += [P("No probability data available.", 10, color=BASE_COLOR, space=10)]
 
         if imp:
             story.append(P("Top Contributing Factors", 12, bold=True, space=6))
@@ -555,25 +565,40 @@ def export_pdf():
             if pie:
                 story += [pie, Spacer(1, 0.5*cm)]
             else:
-                story += [P("No contributing factor data available.", 10, color="#9c968f", space=10)]
+                story += [P("No contributing factor data available.", 10, color=BASE_COLOR, space=10)]
 
         story.append(P("Personalised Recommendations", 12, bold=True, space=6))
         rec_table = build_recommendations(sugs)
         if rec_table:
             story += [Spacer(1, 0.2*cm), rec_table, Spacer(1, 0.5*cm)]
         else:
-            story += [P("No recommendations available.", 10, color="#9c968f", space=10)]
+            story += [P("No recommendations available.", 10, color=BASE_COLOR, space=10)]
 
         if level == "Depression":
-            story.append(P("Contact organizations for help", 12, bold=True, space=6))
+            handshake_path = os.path.join(ASSET_DIR, "handshake.png")
+            if os.path.exists(handshake_path):
+                help_icon = Image(handshake_path, width=1.1 * cm, height=1.1 * cm)
+            else:
+                help_icon = Spacer(1, 1.1 * cm)
+            help_header = Table(
+                [[help_icon, Paragraph("Find Crisis Supports", help_title)]],
+                colWidths=[1.4 * cm, doc.width - 1.4 * cm],
+            )
+            help_header.setStyle(TableStyle([
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ]))
+            story += [help_header, Spacer(1, 0.2 * cm)]
             help_rows = []
             for org in HELP_ORGS:
                 left = Paragraph(
-                    f"<b>{org['name']}</b><br/><font color='#9c968f'>{org['meta']}</font>",
+                    f"<b>{org['name']}</b><br/><i>{org['meta']}</i>",
                     small,
                 )
                 right = Paragraph(
-                    f"{org['desc']}<br/><font color='#2563eb'>{org['url']}</font>",
+                    f"{org['desc']}<br/>{org['url']}",
                     small,
                 )
                 help_rows.append([left, right])
@@ -592,9 +617,9 @@ def export_pdf():
             Spacer(1, 0.4*cm),
             HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e8e4de")),
             Spacer(1, 0.2*cm),
-            P("This report is for informational purposes only and does not constitute "
-              "medical advice. If you are experiencing distress, please consult a "
-              "qualified mental health professional.", 8, color="#9c968f"),
+                        P("This report is for informational purposes only and does not constitute "
+                            "medical advice. If you are experiencing distress, please consult a "
+                            "qualified mental health professional.", 8, color=BASE_COLOR),
         ]
 
         doc.build(story)
