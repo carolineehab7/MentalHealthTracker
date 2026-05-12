@@ -97,11 +97,11 @@ FEATURE_LABELS = {
 }
 
 MOOD_MAP = {
-    "Very sad": 1,
-    "Stressed":  2,
-    "Neutral":   5,
-    "Good":      8,
-    "Great":     10,
+    "Very sad":  5,   # training self_esteem scale is 0-30 (higher = better)
+    "Stressed":  8,
+    "Neutral":  15,
+    "Good":     22,
+    "Great":    30,
 }
 
 _HERE      = os.path.dirname(__file__)

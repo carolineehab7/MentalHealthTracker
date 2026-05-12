@@ -27,6 +27,38 @@ const LEVEL_COLORS = {
   High: "var(--danger)",
 };
 
+const RISK_COLORS = {
+  Low:      { bg: "#f0fdf4", border: "#86efac", text: "#15803d" },
+  Moderate: { bg: "#fffbeb", border: "#fcd34d", text: "#b45309" },
+  High:     { bg: "#fef2f2", border: "#fca5a5", text: "#b91c1c" },
+};
+
+function DiseaseRiskCard({ condition, risk, icon, indicator }) {
+  const c = RISK_COLORS[risk] || RISK_COLORS.Low;
+  return (
+    <div style={{
+      display: "flex", gap: "0.75rem", alignItems: "flex-start",
+      padding: "0.75rem 1rem", borderRadius: "0.5rem", marginBottom: "0.5rem",
+      background: c.bg, border: `1px solid ${c.border}`,
+    }}>
+      <span style={{ fontSize: "1.25rem", flexShrink: 0 }}>{icon}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+          <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>{condition}</span>
+          <span style={{
+            fontSize: "0.7rem", fontWeight: 700, padding: "0.1rem 0.5rem",
+            borderRadius: "999px", background: c.border, color: c.text,
+            textTransform: "uppercase", letterSpacing: "0.05em",
+          }}>{risk} Risk</span>
+        </div>
+        <p style={{ margin: "0.25rem 0 0", fontSize: "0.8rem", color: "#6b7280", lineHeight: 1.5 }}>
+          {indicator}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function ResultPanel({ data, onExportPDF, onClear }) {
   if (!data) return null;
 
@@ -37,6 +69,7 @@ export default function ResultPanel({ data, onExportPDF, onClear }) {
     radarScores,
     featureImportance,
     suggestions,
+    diseaseRisk,
   } = data;
 
   const probs = probabilities || {};
@@ -110,6 +143,28 @@ export default function ResultPanel({ data, onExportPDF, onClear }) {
         {sugs.map((s, i) => (
           <SugItem key={i} icon={s.icon} category={s.category} text={s.text} />
         ))}
+
+        {/* ── Disease Risk ── */}
+        {diseaseRisk && diseaseRisk.length > 0 && (
+          <>
+            <Divider />
+            <SLabel>Potential disease risk assessment</SLabel>
+            <p className={styles.impDesc}>
+              Based on your reported symptoms and metrics, the following conditions
+              may warrant attention. This is not a diagnosis — consult a doctor for
+              any concerns.
+            </p>
+            {diseaseRisk.map((d, i) => (
+              <DiseaseRiskCard
+                key={i}
+                condition={d.condition}
+                risk={d.risk}
+                icon={d.icon}
+                indicator={d.indicator}
+              />
+            ))}
+          </>
+        )}
 
         {/* ── Actions ── */}
         <div className={styles.btnRow}>

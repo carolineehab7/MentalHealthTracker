@@ -78,51 +78,187 @@ COPING = {
 # ─────────────────────────────────────────────
 def map_ui_to_features(data: dict) -> dict:
     """
-    Converts the simplified 12-field UI payload into the full
-    20-feature vector the ML model expects.
+    Converts the simplified UI payload into the full 20-feature vector the
+    ML model expects.  Scales are matched to the training dataset:
+      anxiety_level  0-21  |  self_esteem   0-30  |  depression   0-27
+      headache       0-5   |  sleep_quality 0-5   |  study_load   0-5
+      future_career  0-5   |  peer_pressure 0-5   |  bullying     0-5
+      blood_pressure 1-3   |  breathing     0-5   |  social_support 0-3
     """
-    mood_val = MOOD_MAP.get(data.get("mood", "Neutral"), 5)
-    sleep_h  = float(data.get("sleep_hours",     7))
-    anxiety  = int(  data.get("anxiety_score",   5))
-    social   = int(  data.get("social_activity", 5))
-    work_h   = float(data.get("work_hours",       8))
+    mood_val  = MOOD_MAP.get(data.get("mood", "Neutral"), 15)   # 0-30
+    sleep_h   = float(data.get("sleep_hours",            7))
+    anxiety   = int(  data.get("anxiety_score",          5))    # UI 1-10
+    social    = int(  data.get("social_activity",        5))    # UI 1-10
+    work_h    = float(data.get("work_hours",             8))
+    dep_ui    = int(  data.get("depression",             3))    # UI 0-10
+    headache_ui = int(data.get("headache",               2))    # UI 0-10
+    career_ui = int(  data.get("future_career_concerns", 5))    # UI 0-10
+    peer_ui   = int(  data.get("peer_pressure",          3))    # UI 0-10
 
-    sleep_q  = min(10, round(sleep_h / 12 * 10))
-    study_ld = min(10, round(work_h  / 16 * 10))
-    soc_sup  = min(3,  max(1, round(social / 3.5)))
+    # Scale UI 1-10 → training 0-21
+    anxiety_scaled = min(21, round(anxiety * 2.1))
+    # Scale UI 0-10 → training 0-27
+    depression_scaled = min(27, round(dep_ui * 2.7))
+    # Sleep hours → quality score 0-5 (higher hours = better quality)
+    sleep_q = min(5, round((sleep_h - 2) / 10 * 5))
+    # Scale UI 0-10 → training 0-5
+    headache_scaled = min(5, round(headache_ui / 2))
+    study_ld        = min(5, round(work_h / 16 * 5))
+    career_scaled   = min(5, round(career_ui / 2))
+    peer_scaled     = min(5, round(peer_ui / 2))
+    # Social support UI 1-10 → 0-3
+    soc_sup = min(3, max(0, round(social / 3.5)))
+    # Binary toggles mapped to training scale
+    bp        = 3 if data.get("blood_pressure",  0) else 1   # 1=normal, 3=high
+    breathing = 4 if data.get("breathing_problem", 0) else 0  # 0-5 scale
+    bullying  = 5 if data.get("bullying",          0) else 0  # 0-5 scale
+
+    # Infer environmental factors (0-5) from visible stress indicators
+    stress_proxy = (anxiety / 10 + dep_ui / 10) / 2   # 0-1
+    living_cond = max(0, min(5, round(5 - stress_proxy * 4)))
+    safety_val  = max(0, min(5, round(5 - stress_proxy * 3)))
+    basic_needs = max(0, min(5, round(5 - stress_proxy * 3)))
+    acad_perf   = max(0, min(5, round(5 - stress_proxy * 4)))
 
     return {
-        "anxiety_level":                anxiety,
+        "anxiety_level":                anxiety_scaled,
         "self_esteem":                  mood_val,
         "mental_health_history":        int(data.get("mental_health_history", 0)),
-        "depression":                   int(data.get("depression", max(0, anxiety - 3))),
-        "headache":                     int(data.get("headache",   0)),
-        "blood_pressure":               int(data.get("blood_pressure", 0)),
+        "depression":                   depression_scaled,
+        "headache":                     headache_scaled,
+        "blood_pressure":               bp,
         "sleep_quality":                sleep_q,
-        "breathing_problem":            int(data.get("breathing_problem", 0)),
-        "noise_level":                  int(data.get("noise_level",   3)),
-        "living_conditions":            int(data.get("living_conditions", 5)),
-        "safety":                       int(data.get("safety",       7)),
-        "basic_needs":                  int(data.get("basic_needs",  7)),
-        "academic_performance":         int(data.get("academic_performance", 5)),
+        "breathing_problem":            breathing,
+        "noise_level":                  3,
+        "living_conditions":            living_cond,
+        "safety":                       safety_val,
+        "basic_needs":                  basic_needs,
+        "academic_performance":         acad_perf,
         "study_load":                   study_ld,
-        "teacher_student_relationship": int(data.get("teacher_student_relationship", 5)),
-        "future_career_concerns":       int(data.get("future_career_concerns",       5)),
+        "teacher_student_relationship": 3,
+        "future_career_concerns":       career_scaled,
         "social_support":               soc_sup,
-        "peer_pressure":                int(data.get("peer_pressure",  3)),
-        "extracurricular_activities":   int(data.get("extracurricular_activities",   3)),
-        "bullying":                     int(data.get("bullying",       0)),
+        "peer_pressure":                peer_scaled,
+        "extracurricular_activities":   3,
+        "bullying":                     bullying,
     }
 
 
 def build_radar(feat: dict) -> dict:
     return {
-        "sleep":    round(feat.get("sleep_quality",  5) / 10 * 100),
-        "anxiety":  round(feat.get("anxiety_level",  5) * 10),
-        "social":   round(feat.get("social_support", 2) / 3  * 100),
-        "workload": round(feat.get("study_load",      5) * 10),
-        "mood":     round(feat.get("self_esteem",     5) * 10),
+        "sleep":    round(feat.get("sleep_quality",  3) / 5  * 100),   # 0-5
+        "anxiety":  round(feat.get("anxiety_level", 10) / 21 * 100),   # 0-21
+        "social":   round(feat.get("social_support", 2) / 3  * 100),   # 0-3
+        "workload": round(feat.get("study_load",      3) / 5  * 100),   # 0-5
+        "mood":     round(feat.get("self_esteem",    15) / 30 * 100),   # 0-30
     }
+
+
+# ─────────────────────────────────────────────
+# DISEASE RISK  (rule-based, uses raw UI values)
+# ─────────────────────────────────────────────
+def compute_disease_risk(ui: dict) -> list:
+    """
+    Returns a list of disease risk objects derived from the raw UI inputs.
+    Each entry: { condition, risk, icon, indicator }
+    """
+    anxiety  = int(  ui.get("anxiety_score",          5))   # 1-10
+    sleep_h  = float(ui.get("sleep_hours",             7))
+    dep      = int(  ui.get("depression",              3))   # 0-10
+    work_h   = float(ui.get("work_hours",              8))
+    headache = int(  ui.get("headache",                2))   # 0-10
+    career   = int(  ui.get("future_career_concerns",  5))   # 0-10
+    peer     = int(  ui.get("peer_pressure",           3))   # 0-10
+    social   = int(  ui.get("social_activity",         5))   # 1-10
+    bp       = int(  ui.get("blood_pressure",          0))   # 0/1
+    breathing= int(  ui.get("breathing_problem",       0))   # 0/1
+    bullying = int(  ui.get("bullying",                0))   # 0/1
+    mh_hist  = int(  ui.get("mental_health_history",   0))   # 0/1
+    mood     = ui.get("mood", "Neutral")
+
+    risks = []
+
+    # ── Burnout Syndrome ─────────────────────────
+    burnout = (work_h / 16) * 0.40 + (career / 10) * 0.35 + (anxiety / 10) * 0.25
+    if burnout > 0.45:
+        risks.append({
+            "condition": "Burnout Syndrome",
+            "risk": "High" if burnout > 0.68 else "Moderate",
+            "icon": "🔥",
+            "indicator": "Sustained high workload combined with career anxiety can cause emotional exhaustion.",
+        })
+
+    # ── Generalized Anxiety Disorder ─────────────
+    gad = (anxiety / 10) * 0.45 + (breathing * 0.15) + (peer / 10) * 0.20 + \
+          (0.20 if mood in ("Very sad", "Stressed") else 0)
+    if gad > 0.45:
+        risks.append({
+            "condition": "Generalized Anxiety Disorder",
+            "risk": "High" if gad > 0.68 else "Moderate",
+            "icon": "😰",
+            "indicator": "Persistent high anxiety with physical symptoms such as breathing issues is a clinical marker.",
+        })
+
+    # ── Clinical Depression ───────────────────────
+    dep_score = (dep / 10) * 0.50 + ((10 - social) / 10) * 0.30 + \
+                (0.20 if mood == "Very sad" else 0.10 if mood == "Stressed" else 0)
+    if dep_score > 0.38:
+        risks.append({
+            "condition": "Clinical Depression",
+            "risk": "High" if dep_score > 0.62 else "Moderate",
+            "icon": "🌧️",
+            "indicator": "Elevated depression scores combined with social withdrawal are key diagnostic markers.",
+        })
+
+    # ── Insomnia / Sleep Disorder ─────────────────
+    insomnia = (max(0, 8 - sleep_h) / 6) * 0.60 + (anxiety / 10) * 0.40
+    if insomnia > 0.38:
+        risks.append({
+            "condition": "Insomnia / Sleep Disorder",
+            "risk": "High" if sleep_h < 5 and anxiety > 6 else "Moderate",
+            "icon": "😴",
+            "indicator": f"Sleeping {sleep_h:.0f} h/night with elevated anxiety chronically disrupts restorative sleep.",
+        })
+
+    # ── Tension Headache / Migraine ───────────────
+    head_score = (headache / 10) * 0.50 + (anxiety / 10) * 0.30 + (work_h / 16) * 0.20
+    if head_score > 0.38:
+        risks.append({
+            "condition": "Tension Headache / Migraine",
+            "risk": "High" if head_score > 0.60 else "Moderate",
+            "icon": "🤕",
+            "indicator": "Frequent headaches under sustained stress suggest a chronic tension pattern.",
+        })
+
+    # ── Hypertension Risk ─────────────────────────
+    if bp:
+        hyp = 0.50 + (anxiety / 10) * 0.30 + (max(0, 8 - sleep_h) / 6) * 0.20
+        risks.append({
+            "condition": "Hypertension Risk",
+            "risk": "High" if hyp > 0.70 else "Moderate",
+            "icon": "❤️",
+            "indicator": "Existing blood pressure issues are significantly amplified by chronic stress and poor sleep.",
+        })
+
+    # ── PTSD / Trauma-related ─────────────────────
+    if bullying and (anxiety > 6 or dep > 5):
+        risks.append({
+            "condition": "Trauma / PTSD Risk",
+            "risk": "High" if anxiety > 7 and dep > 6 else "Moderate",
+            "icon": "🛡️",
+            "indicator": "Exposure to bullying alongside high anxiety and depression can trigger trauma responses.",
+        })
+
+    # ── All clear ─────────────────────────────────
+    if not risks:
+        risks.append({
+            "condition": "No Significant Disease Risk Detected",
+            "risk": "Low",
+            "icon": "✅",
+            "indicator": "Your current metrics do not indicate immediate disease risk. Keep maintaining healthy habits.",
+        })
+
+    return risks
 
 
 # ─────────────────────────────────────────────
@@ -152,10 +288,11 @@ def predict():
     }
     """
     try:
-        data     = request.get_json(force=True)
-        features = map_ui_to_features(data)
-        result   = predict_stress(features)
-        radar    = build_radar(features)
+        data        = request.get_json(force=True)
+        features    = map_ui_to_features(data)
+        result      = predict_stress(features)
+        radar       = build_radar(features)
+        disease_risk = compute_disease_risk(data)
 
         return jsonify({
             "stressLevel":       result["stressLevel"],
@@ -164,6 +301,7 @@ def predict():
             "radarScores":       radar,
             "featureImportance": result["featureImportance"][:5],
             "suggestions":       COPING[result["stressLevel"]],
+            "diseaseRisk":       disease_risk,
             "timestamp":         datetime.now().isoformat(),
         })
 
