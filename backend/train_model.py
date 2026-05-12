@@ -48,14 +48,6 @@ NUMERIC_COLS = [
     "Job Satisfaction",
     "Work/Study Hours",
     "Financial Stress",
-    # Engineered features
-    "Stress_Score",
-    "Satisfaction_Score",
-    "Sleep_Quality",
-    "Diet_Quality",
-    "Risk_Factors",
-    "Wellbeing_Index",
-    "Pressure_Satisfaction_Ratio",
 ]
 
 CATEGORICAL_COLS = [
@@ -109,43 +101,6 @@ def _build_preprocessor(numeric_features, categorical_features):
         ("num", numeric_transformer, numeric_features),
         ("cat", categorical_transformer, categorical_features),
     ])
-
-
-def _engineer_features(df):
-    """
-    Create derived features that better capture depression indicators.
-    These compound features combine multiple stress factors.
-    """
-    df = df.copy()
-    
-    # Stress composite score (normalized 0-5 scale)
-    stress_cols = ["Academic Pressure", "Work Pressure", "Financial Stress"]
-    df["Stress_Score"] = df[stress_cols].mean(axis=1)
-    
-    # Satisfaction composite score (inverse: lower is worse)
-    satisfaction_cols = ["Study Satisfaction", "Job Satisfaction"]
-    df["Satisfaction_Score"] = df[satisfaction_cols].mean(axis=1)
-    
-    # Sleep quality (encoded as numeric)
-    sleep_map = {"Less than 5 hours": 1, "5-6 hours": 2, "7-8 hours": 4, "More than 8 hours": 3}
-    df["Sleep_Quality"] = df["Sleep Duration"].map(sleep_map)
-    
-    # Diet quality (encoded as numeric)
-    diet_map = {"Unhealthy": 1, "Moderate": 2, "Healthy": 3}
-    df["Diet_Quality"] = df["Dietary Habits"].map(diet_map)
-    
-    # Risk factor composite (suicidal thoughts + family history)
-    df["Suicidal"] = (df["Have you ever had suicidal thoughts ?"] == "Yes").astype(int)
-    df["Family_Risk"] = (df["Family History of Mental Illness"] == "Yes").astype(int)
-    df["Risk_Factors"] = df["Suicidal"] + df["Family_Risk"]
-    
-    # Wellbeing index (higher = better health)
-    df["Wellbeing_Index"] = (df["Satisfaction_Score"] + df["Sleep_Quality"] + df["Diet_Quality"]) / 3
-    
-    # Pressure-to-satisfaction ratio (higher = at-risk)
-    df["Pressure_Satisfaction_Ratio"] = df["Stress_Score"] / (df["Satisfaction_Score"] + 0.5)
-    
-    return df
 
 
 # ─────────────────────────────────────────────
@@ -225,27 +180,17 @@ def predict_depression(input_dict):
     Returns { stressLevel, confidence, probabilities, featureImportance }.
     Key 'stressLevel' is kept for frontend compatibility; value is 'Depression'
     or 'No Depression'.
-    Uses optimized decision threshold for better sensitivity to depression indicators.
     """
     pipeline = joblib.load(os.path.join(MODEL_DIR, "depression_model.pkl"))
     metadata = joblib.load(os.path.join(MODEL_DIR, "depression_metadata.pkl"))
 
-    label_map        = metadata.get("label_map",        LABEL_MAP)
-    numeric_cols     = metadata.get("numeric_cols",     NUMERIC_COLS)
+    label_map       = metadata.get("label_map",       LABEL_MAP)
+    numeric_cols    = metadata.get("numeric_cols",    NUMERIC_COLS)
     categorical_cols = metadata.get("categorical_cols", CATEGORICAL_COLS)
-    optimal_threshold = metadata.get("optimal_threshold", 0.5)
 
-    row = pd.DataFrame([input_dict])
-    # Apply feature engineering
-    row = _engineer_features(row)
-    
-    # Get probability predictions
-    proba = pipeline.predict_proba(row)[0]
-    
-    # Use optimized threshold instead of default 0.5
-    pred_class = 1 if proba[1] >= optimal_threshold else 0
-    
-    # Confidence is the probability of the predicted class
+    row        = pd.DataFrame([input_dict])
+    pred_class = int(pipeline.predict(row)[0])
+    proba      = pipeline.predict_proba(row)[0]
     confidence = round(float(proba[pred_class]) * 100)
 
     importance = _extract_feature_importance(pipeline, numeric_cols, categorical_cols)
@@ -273,17 +218,9 @@ if __name__ == "__main__":
     print(f"  Target distribution:\n{df[TARGET_COL].value_counts().rename(LABEL_MAP).to_string()}")
 
     # 2. Prep
-    print("\n[2/5] Engineering features and splitting...")
-    
-    # Apply feature engineering to full dataset
-    df = _engineer_features(df)
-    
-    # Update numeric features to include engineered columns (and filter to available cols)
-    engineered_cols = ["Stress_Score", "Satisfaction_Score", "Sleep_Quality", 
-                       "Diet_Quality", "Risk_Factors", "Wellbeing_Index", "Pressure_Satisfaction_Ratio"]
-    numeric_features   = [c for c in NUMERIC_COLS if c in df.columns]
+    print("\n[2/5] Splitting features and target...")
+    numeric_features   = [c for c in NUMERIC_COLS    if c in df.columns]
     categorical_features = [c for c in CATEGORICAL_COLS if c in df.columns]
-    
     X = df.drop(columns=[TARGET_COL, "id"], errors="ignore")
     y = df[TARGET_COL].astype(int)
 
@@ -291,7 +228,6 @@ if __name__ == "__main__":
         X, y, test_size=0.2, random_state=42, stratify=y
     )
     print(f"  Train: {len(X_train):,}  |  Test: {len(X_test):,}")
-    print(f"  Features: {len(numeric_features)} numeric + {len(categorical_features)} categorical + {len(engineered_cols)} engineered")
 
     # 3. Compare models
     print("\n[3/5] Comparing models (5-fold stratified CV)...")
@@ -301,37 +237,22 @@ if __name__ == "__main__":
     candidates = {
         "Logistic Regression": Pipeline([
             ("preprocess", preprocessor),
-            ("clf", LogisticRegression(
-                max_iter=2000, 
-                class_weight="balanced", 
-                random_state=42,
-                C=0.5,  # Stronger regularization
-                solver="lbfgs"
-            )),
+            ("clf", LogisticRegression(max_iter=2000, class_weight="balanced", random_state=42)),
         ]),
         "Random Forest": Pipeline([
             ("preprocess", preprocessor),
-            ("clf", RandomForestClassifier(
-                n_estimators=300,
-                max_depth=15,
-                min_samples_split=5,
-                min_samples_leaf=2,
-                class_weight="balanced_subsample", 
-                random_state=42, 
-                n_jobs=-1
-            )),
+            ("clf", RandomForestClassifier(class_weight="balanced_subsample", random_state=42, n_jobs=-1)),
         ]),
     }
 
     results = {}
     for name, pipe in candidates.items():
-        # Use F1-macro score for imbalanced data
-        scores   = cross_val_score(pipe, X_train, y_train, cv=cv, scoring="f1_weighted")
+        scores   = cross_val_score(pipe, X_train, y_train, cv=cv, scoring="accuracy")
         pipe.fit(X_train, y_train)
         test_acc = accuracy_score(y_test, pipe.predict(X_test))
         results[name] = {"cv_mean": scores.mean(), "cv_std": scores.std(),
                          "test_acc": test_acc, "pipe": pipe}
-        print(f"  {name:<22} CV_F1={scores.mean():.3f}±{scores.std():.3f}  Acc={test_acc:.3f}")
+        print(f"  {name:<22} CV={scores.mean():.3f}±{scores.std():.3f}  Test={test_acc:.3f}")
 
     # 4. Pick best and tune if it's RF
     best_name  = max(results, key=lambda k: results[k]["test_acc"])
@@ -346,45 +267,22 @@ if __name__ == "__main__":
                       ("clf", RandomForestClassifier(class_weight="balanced_subsample",
                                                      random_state=42, n_jobs=-1))]),
             param_distributions={
-                "clf__n_estimators":      [200, 300, 400, 500],
-                "clf__max_depth":         [10, 15, 20, 25],
-                "clf__min_samples_split": [3, 5, 7],
-                "clf__min_samples_leaf":  [1, 2, 3],
-                "clf__max_features":      ["sqrt", "log2"],
+                "clf__n_estimators":      [200, 300, 500],
+                "clf__max_depth":         [None, 10, 20, 30],
+                "clf__min_samples_split": [2, 5, 10],
+                "clf__min_samples_leaf":  [1, 2, 4],
             },
-            n_iter=20, scoring="f1_weighted", cv=cv, n_jobs=-1, random_state=42,
+            n_iter=12, scoring="accuracy", cv=cv, n_jobs=-1, random_state=42,
         )
         search.fit(X_train, y_train)
         if accuracy_score(y_test, search.best_estimator_.predict(X_test)) >= results[best_name]["test_acc"]:
             best_model = search.best_estimator_
             best_name  = "Tuned Random Forest"
 
-    # 5. Calibrate and optimize threshold
-    print("\n[5/5] Optimizing decision threshold...")
-    
-    # Get probability predictions on test set
-    y_pred_proba = best_model.predict_proba(X_test)[:, 1]
-    
-    # Find optimal threshold using F1-score maximization (better for imbalanced data)
-    from sklearn.metrics import f1_score
-    
-    best_f1 = 0
-    optimal_threshold = 0.5
-    
-    for threshold in np.arange(0.1, 0.9, 0.01):
-        y_pred_threshold = (y_pred_proba >= threshold).astype(int)
-        f1 = f1_score(y_test, y_pred_threshold)
-        if f1 > best_f1:
-            best_f1 = f1
-            optimal_threshold = threshold
-    
-    print(f"  Optimal decision threshold: {optimal_threshold:.3f} (F1-score: {best_f1:.3f})")
-    
-    # 6. Save
-    print("\n[6/6] Saving model artifacts...")
+    # 5. Save
+    print("\n[5/5] Saving model artifacts...")
     os.makedirs(MODEL_DIR, exist_ok=True)
     final_acc = accuracy_score(y_test, best_model.predict(X_test))
-    
     joblib.dump(best_model, os.path.join(MODEL_DIR, "depression_model.pkl"))
     joblib.dump({
         "target_col":        TARGET_COL,
@@ -393,10 +291,8 @@ if __name__ == "__main__":
         "label_map":         LABEL_MAP,
         "selected_model":    best_name,
         "test_accuracy":     final_acc,
-        "optimal_threshold": float(optimal_threshold),
     }, os.path.join(MODEL_DIR, "depression_metadata.pkl"))
 
     print(f"  Test accuracy : {final_acc:.3f}")
-    print(f"  Optimal threshold saved for inference")
     print(f"  Saved to      : {MODEL_DIR}/")
     print("\n====== Done ====== → python app.py")
