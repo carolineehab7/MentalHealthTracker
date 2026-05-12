@@ -14,7 +14,7 @@ export default function App() {
           <span className={styles.brandIcon}>🧠</span>
           <div>
             <div className={styles.brandName}>MindCheck</div>
-            <div className={styles.brandSub}>Stress Classifier</div>
+            <div className={styles.brandSub}>Depression Screener</div>
           </div>
         </div>
 
@@ -30,7 +30,7 @@ export default function App() {
         <div className={styles.footer}>
           <div className={styles.modelBadge}>
             <Activity size={12} />
-            Random Forest · 20 features
+            Classifier · 13 features
           </div>
           <p className={styles.disclaimer}>
             For informational use only. Not a substitute for professional medical advice.

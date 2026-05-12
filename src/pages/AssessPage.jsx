@@ -1,46 +1,42 @@
 import { useState } from 'react'
 import {
-  Frown, Zap, Meh, Smile, SmilePlus,
-  Activity, Heart, Shield,
-  Brain, HeartPulse, Wind, Users,
+  User, BookOpen, Briefcase, DollarSign,
+  Moon, Utensils, Brain, Users,
+  Activity, GraduationCap, Heart,
 } from 'lucide-react'
 import {
   Card, SLabel, Pill,
-  SliderField, ToggleField, MoodButton,
+  SliderField, ToggleField, OptionField,
   BtnPrimary, SpinnerCard, ErrorBox,
 } from '../components/UI'
 import ResultPanel   from '../components/ResultPanel'
 import { usePredict } from '../hooks/usePredict'
 import styles from './AssessPage.module.css'
 
-/* ── Mood options ── */
-const MOODS = [
-  { icon: Frown,     label: 'Very sad'  },
-  { icon: Zap,       label: 'Stressed'  },
-  { icon: Meh,       label: 'Neutral'   },
-  { icon: Smile,     label: 'Good'      },
-  { icon: SmilePlus, label: 'Great'     },
-]
+/* ── Static option lists ── */
+const SLEEP_OPTIONS   = ['Less than 5 hours', '5-6 hours', '7-8 hours', 'More than 8 hours']
+const DIET_OPTIONS    = ['Healthy', 'Moderate', 'Unhealthy']
+const GENDER_OPTIONS  = ['Male', 'Female']
 
-/* ── Initial slider state ── */
+/* ── Default state ── */
 const DEFAULTS = {
-  sleep_hours:            7,
-  anxiety_score:          4,
-  social_activity:        6,
-  work_hours:             8,
-  depression:             3,
-  future_career_concerns: 5,
-  peer_pressure:          3,
-  headache:               2,
-  mental_health_history:  false,
-  blood_pressure:         false,
-  breathing_problem:      false,
-  bullying:               false,
+  age:                   22,
+  academic_pressure:     2,
+  work_pressure:         1,
+  cgpa:                  7.0,
+  study_satisfaction:    2,
+  job_satisfaction:      2,
+  work_study_hours:      6,
+  financial_stress:      2,
+  gender:                'Male',
+  sleep_duration:        '7-8 hours',
+  dietary_habits:        'Moderate',
+  family_history:        false,
+  suicidal_thoughts:     false,
 }
 
 export default function AssessPage() {
   const [inputs, setInputs] = useState(DEFAULTS)
-  const [mood,   setMood]   = useState('Neutral')
   const { predict, exportPDF, result, loading, error } = usePredict()
 
   function set(key, val) {
@@ -48,17 +44,12 @@ export default function AssessPage() {
   }
 
   async function handleAnalyze() {
-    /* Build the payload the Flask /predict endpoint expects */
     const payload = {
       ...inputs,
-      mood,
-      mental_health_history: inputs.mental_health_history ? 1 : 0,
-      blood_pressure:        inputs.blood_pressure        ? 1 : 0,
-      breathing_problem:     inputs.breathing_problem     ? 1 : 0,
-      bullying:              inputs.bullying               ? 1 : 0,
+      suicidal_thoughts: inputs.suicidal_thoughts ? 'Yes' : 'No',
+      family_history:    inputs.family_history    ? 'Yes' : 'No',
     }
     await predict(payload)
-    /* Scroll smoothly to the result */
     setTimeout(() => {
       document.getElementById('result-anchor')
         ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -70,122 +61,121 @@ export default function AssessPage() {
 
       {/* ── Hero ── */}
       <div className={styles.hero}>
-        <Pill>Self-Assessment Tool</Pill>
-        <h1 className={styles.h1}>How stressed are you today?</h1>
+        <Pill>Depression Screening Tool</Pill>
+        <h1 className={styles.h1}>How are you doing, really?</h1>
         <p className={styles.sub}>
-          Fill in your health metrics below. Our Random Forest model — trained on 1,200
-          real survey records across <strong>20 clinical features</strong> — will classify
-          your stress level and explain what drove the prediction.
+          Fill in your academic and lifestyle details. Our classifier — trained on{' '}
+          <strong>27,901 student records</strong> across{' '}
+          <strong>13 clinical features</strong> — will assess your depression risk
+          and offer personalised recommendations.
         </p>
       </div>
 
-      {/* ── Core metrics ── */}
+      {/* ── Academic & Professional Metrics ── */}
       <Card>
-        <SLabel icon={Activity}>Core daily metrics</SLabel>
+        <SLabel icon={GraduationCap}>Academic &amp; Professional Metrics</SLabel>
         <div className={styles.grid2}>
           <SliderField
-            label="Sleep hours / night" id="sleep"
-            min={2} max={12} step={0.5} value={inputs.sleep_hours}
-            onChange={v => set('sleep_hours', v)}
-            leftLabel="2 h" rightLabel="12 h" suffix=" h"
+            label="Age" id="age"
+            min={18} max={59} step={1} value={inputs.age}
+            onChange={v => set('age', v)}
+            leftLabel="18" rightLabel="59" suffix=" yrs"
           />
           <SliderField
-            label="Anxiety score" id="anxiety"
-            min={1} max={10} step={1} value={inputs.anxiety_score}
-            onChange={v => set('anxiety_score', v)}
-            leftLabel="1 (none)" rightLabel="10 (severe)" suffix=" / 10"
+            label="Academic Pressure" id="acad"
+            min={0} max={5} step={0.5} value={inputs.academic_pressure}
+            onChange={v => set('academic_pressure', v)}
+            leftLabel="0 (none)" rightLabel="5 (extreme)" suffix=" / 5"
           />
           <SliderField
-            label="Social activity level" id="social"
-            min={1} max={10} step={1} value={inputs.social_activity}
-            onChange={v => set('social_activity', v)}
-            leftLabel="1 (isolated)" rightLabel="10 (very active)" suffix=" / 10"
+            label="Work Pressure" id="work"
+            min={0} max={5} step={0.5} value={inputs.work_pressure}
+            onChange={v => set('work_pressure', v)}
+            leftLabel="0 (none)" rightLabel="5 (extreme)" suffix=" / 5"
           />
           <SliderField
-            label="Work / study hours / day" id="work"
-            min={0} max={16} step={0.5} value={inputs.work_hours}
-            onChange={v => set('work_hours', v)}
-            leftLabel="0 h" rightLabel="16 h" suffix=" h"
+            label="CGPA" id="cgpa"
+            min={0} max={10} step={0.1} value={inputs.cgpa}
+            onChange={v => set('cgpa', v)}
+            leftLabel="0.0" rightLabel="10.0" suffix=""
           />
           <SliderField
-            label="Depression score" id="depression"
-            min={0} max={10} step={1} value={inputs.depression}
-            onChange={v => set('depression', v)}
-            leftLabel="0 (none)" rightLabel="10 (severe)" suffix=" / 10"
+            label="Study Satisfaction" id="studysat"
+            min={0} max={5} step={0.5} value={inputs.study_satisfaction}
+            onChange={v => set('study_satisfaction', v)}
+            leftLabel="0 (very low)" rightLabel="5 (very high)" suffix=" / 5"
           />
           <SliderField
-            label="Career concern level" id="career"
-            min={0} max={10} step={1} value={inputs.future_career_concerns}
-            onChange={v => set('future_career_concerns', v)}
-            leftLabel="0 (none)" rightLabel="10 (very worried)" suffix=" / 10"
+            label="Job Satisfaction" id="jobsat"
+            min={0} max={4} step={0.5} value={inputs.job_satisfaction}
+            onChange={v => set('job_satisfaction', v)}
+            leftLabel="0 (very low)" rightLabel="4 (very high)" suffix=" / 4"
           />
           <SliderField
-            label="Peer pressure level" id="peer"
-            min={0} max={10} step={1} value={inputs.peer_pressure}
-            onChange={v => set('peer_pressure', v)}
-            leftLabel="0 (none)" rightLabel="10 (extreme)" suffix=" / 10"
+            label="Work / Study Hours per day" id="hours"
+            min={0} max={12} step={0.5} value={inputs.work_study_hours}
+            onChange={v => set('work_study_hours', v)}
+            leftLabel="0 h" rightLabel="12 h" suffix=" h"
           />
           <SliderField
-            label="Headache frequency" id="headache"
-            min={0} max={10} step={1} value={inputs.headache}
-            onChange={v => set('headache', v)}
-            leftLabel="0 (never)" rightLabel="10 (daily)" suffix=" / 10"
+            label="Financial Stress" id="fin"
+            min={1} max={5} step={0.5} value={inputs.financial_stress}
+            onChange={v => set('financial_stress', v)}
+            leftLabel="1 (none)" rightLabel="5 (severe)" suffix=" / 5"
           />
         </div>
       </Card>
 
-      {/* ── Mood ── */}
+      {/* ── Lifestyle ── */}
       <Card>
-        <SLabel icon={Heart}>Current mood</SLabel>
-        <div className={styles.moodGrid}>
-          {MOODS.map(m => (
-            <MoodButton
-              key={m.label}
-              icon={m.icon}
-              label={m.label}
-              active={mood === m.label}
-              onClick={() => setMood(m.label)}
-            />
-          ))}
+        <SLabel icon={Moon}>Lifestyle</SLabel>
+        <div className={styles.optionGroup}>
+          <OptionField
+            label="Sleep Duration"
+            icon={Moon}
+            options={SLEEP_OPTIONS}
+            value={inputs.sleep_duration}
+            onChange={v => set('sleep_duration', v)}
+          />
+          <OptionField
+            label="Dietary Habits"
+            icon={Utensils}
+            options={DIET_OPTIONS}
+            value={inputs.dietary_habits}
+            onChange={v => set('dietary_habits', v)}
+          />
+          <OptionField
+            label="Gender"
+            icon={User}
+            options={GENDER_OPTIONS}
+            value={inputs.gender}
+            onChange={v => set('gender', v)}
+          />
         </div>
       </Card>
 
-      {/* ── Health conditions ── */}
+      {/* ── Mental Health Background ── */}
       <Card>
-        <SLabel icon={Shield}>Additional health conditions</SLabel>
-        <ToggleField
-          icon={Brain}
-          label="Mental health history"
-          sub="Have you had prior mental health issues?"
-          checked={inputs.mental_health_history}
-          onChange={v => set('mental_health_history', v)}
-        />
-        <ToggleField
-          icon={HeartPulse}
-          label="Blood pressure issues"
-          sub="High or low blood pressure diagnosed"
-          checked={inputs.blood_pressure}
-          onChange={v => set('blood_pressure', v)}
-        />
-        <ToggleField
-          icon={Wind}
-          label="Breathing problems"
-          sub="Asthma, shortness of breath, etc."
-          checked={inputs.breathing_problem}
-          onChange={v => set('breathing_problem', v)}
-        />
+        <SLabel icon={Brain}>Mental Health Background</SLabel>
         <ToggleField
           icon={Users}
-          label="Experience of bullying"
-          sub="Current or recent bullying situation"
-          checked={inputs.bullying}
-          onChange={v => set('bullying', v)}
+          label="Family History of Mental Illness"
+          sub="Has a close family member been diagnosed with a mental illness?"
+          checked={inputs.family_history}
+          onChange={v => set('family_history', v)}
+        />
+        <ToggleField
+          icon={Heart}
+          label="History of Suicidal Thoughts"
+          sub="Have you ever experienced thoughts of suicide or self-harm?"
+          checked={inputs.suicidal_thoughts}
+          onChange={v => set('suicidal_thoughts', v)}
         />
       </Card>
 
       {/* ── Submit ── */}
       <BtnPrimary onClick={handleAnalyze} loading={loading}>
-        {loading ? 'Analyzing…' : 'Analyze My Stress Level →'}
+        {loading ? 'Analyzing…' : 'Assess My Depression Risk →'}
       </BtnPrimary>
 
       {/* ── Result area ── */}

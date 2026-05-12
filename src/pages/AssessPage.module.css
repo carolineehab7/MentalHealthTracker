@@ -52,6 +52,12 @@
   gap: 8px;
 }
 
+.optionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
 @media (max-width: 600px) {
   .page {
     padding: 1.5rem 1rem 4rem;
