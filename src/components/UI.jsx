@@ -229,7 +229,13 @@ export function ImpBar({ label, pct, maxPct }) {
 export function SugItem({ icon, category, text }) {
   return (
     <div className={styles.sugItem}>
-      <div className={styles.sugIcon}>{icon}</div>
+      <div className={styles.sugIcon}>
+        {typeof icon === 'string' ? (
+          <img src={icon} alt={category} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        ) : (
+          icon
+        )}
+      </div>
       <div>
         <div className={styles.sugCat}>{category}</div>
         <div className={styles.sugText}>{text}</div>
