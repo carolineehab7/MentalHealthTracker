@@ -274,7 +274,7 @@ export function AlertHigh() {
         <AlertTriangle size={22} />
       </div>
       <div className={styles.alertText}>
-        <strong>High stress detected.</strong> If you have been feeling this way
+        <strong>Depression detected.</strong> If you have been feeling this way
         for several days, please consider speaking with a mental health
         professional or a trusted person.{" "}
         <a

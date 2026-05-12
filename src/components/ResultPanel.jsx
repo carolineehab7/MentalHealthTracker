@@ -172,7 +172,7 @@ export default function ResultPanel({ data, onExportPDF, onClear }) {
         {/* ── Suggestions ── */}
         <SLabel>Personalised recommendations</SLabel>
         {sugs.map((s, i) => (
-          <SugItem key={i} icon={s.icon} category={s.category} text={s.text} />
+          <SugItem key={i} category={s.category} text={s.text} />
         ))}
 
         {/* ── Disease Risk ── */}
@@ -190,7 +190,7 @@ export default function ResultPanel({ data, onExportPDF, onClear }) {
                 key={i}
                 condition={d.condition}
                 risk={d.risk}
-                icon={d.icon}
+                
                 indicator={d.indicator}
               />
             ))}
