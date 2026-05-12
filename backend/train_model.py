@@ -111,13 +111,38 @@ def _extract_feature_importance(pipeline, numeric_cols, categorical_cols):
     preprocessor = pipeline.named_steps["preprocess"]
     clf          = pipeline.named_steps["clf"]
 
-    # Build human-readable feature names after ColumnTransformer
-    feature_names = list(numeric_cols)
-    cat_transformer = preprocessor.named_transformers_["cat"]
-    enc = cat_transformer.named_steps["encoder"]
-    for col_idx, col in enumerate(categorical_cols):
-        for cat in enc.categories_[col_idx]:
-            feature_names.append(f"{col}: {cat}")
+    # Use sklearn's built-in method to get transformed feature names reliably
+    try:
+        raw_names = preprocessor.get_feature_names_out()
+        # raw_names look like "num__Age", "cat__Gender_Male" — clean them up
+        feature_names = []
+        for n in raw_names:
+            if n.startswith("num__"):
+                feature_names.append(n[5:])         # strip "num__"
+            elif n.startswith("cat__"):
+                parts = n[5:].rsplit("_", 1)        # strip "cat__", split on last "_"
+                col = parts[0] if len(parts) == 2 else n[5:]
+                val = parts[1] if len(parts) == 2 else ""
+                # Match col to the original categorical column (prefix match)
+                matched = next((c for c in categorical_cols if col.startswith(c[:10])), col)
+                feature_names.append(f"{matched}: {val}" if val else matched)
+            else:
+                feature_names.append(n)
+    except Exception:
+        # Fallback: build names manually from categories
+        feature_names = list(numeric_cols)
+        for transformer_name, transformer, cols in preprocessor.transformers_:
+            if transformer_name == "cat":
+                # Find the OneHotEncoder step regardless of its name
+                enc = None
+                for step_name, step in transformer.steps:
+                    if hasattr(step, "categories_"):
+                        enc = step
+                        break
+                if enc:
+                    for col_idx, col in enumerate(cols):
+                        for cat in enc.categories_[col_idx]:
+                            feature_names.append(f"{col}: {cat}")
 
     # Get raw importance weights
     if hasattr(clf, "feature_importances_"):
