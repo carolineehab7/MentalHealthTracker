@@ -27,8 +27,8 @@ export function Pill({ children, blue = false }) {
 
 /* ── Prediction badge (handles both stress levels and depression labels) ── */
 export function StressBadge({ level }) {
-  const isOk     = level === "Low"  || level === "No Depression";
-  const isWarn   = level === "Moderate";
+  const isOk = level === "Low" || level === "No Depression";
+  const isWarn = level === "Moderate";
   const isDanger = level === "High" || level === "Depression";
   const cls = isOk ? styles.sbOk : isWarn ? styles.sbWarn : styles.sbDanger;
   return <span className={`${styles.stressBadge} ${cls}`}>{level}</span>;
@@ -229,7 +229,13 @@ export function ImpBar({ label, pct, maxPct }) {
 export function SugItem({ icon, category, text }) {
   return (
     <div className={styles.sugItem}>
-      <div className={styles.sugIcon}>{icon}</div>
+      <div className={styles.sugIcon}>
+        {typeof icon === 'string' ? (
+          <img src={icon} alt={category} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        ) : (
+          icon
+        )}
+      </div>
       <div>
         <div className={styles.sugCat}>{category}</div>
         <div className={styles.sugText}>{text}</div>

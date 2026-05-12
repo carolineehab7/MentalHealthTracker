@@ -39,23 +39,23 @@ MODEL_DIR = os.path.join(ML_DIR, "model")
 # ─────────────────────────────────────────────
 COPING = {
     "No Depression": [
-        {"category": "Maintain Your Balance",
+        {"category": "Maintain Your Balance", "icon": "/assets/sleeping.png",
          "text": "You're showing resilience. Keep your current routines of adequate sleep, balanced meals, and social connection."},
-        {"category": "Stay Physically Active",
+        {"category": "Stay Physically Active", "icon": "/assets/excercise.png",
          "text": "Regular exercise (30 min/day) is a powerful preventive measure — it boosts mood and reduces future risk."},
-        {"category": "Academic Balance",
+        {"category": "Academic Balance", "icon": "/assets/academic.png",
          "text": "Take regular study breaks. The Pomodoro technique (25 min on, 5 min off) prevents cognitive burnout."},
-        {"category": "Stay Connected",
+        {"category": "Stay Connected", "icon": "/assets/sleeping.png",
          "text": "Nurture your social network. Strong relationships act as a long-term buffer against depression."},
     ],
     "Depression": [
-        {"category": "Seek Professional Help", 
+        {"category": "Seek Professional Help", "icon": "/assets/academic.png",
          "text": "Consider speaking with a counselor, therapist, or psychiatrist. Reaching out is a sign of strength, not weakness."},
-        {"category": "Reduce Your Load", 
+        {"category": "Reduce Your Load", "icon": "/assets/excercise.png",
          "text": "Talk to your academic advisor or employer about workload adjustments. Protecting your mental health comes first."},
-        {"category": "Prioritise Sleep", 
+        {"category": "Prioritise Sleep", "icon": "/assets/sleeping.png",
          "text": "Aim for 7–9 hours of sleep each night. A consistent sleep schedule significantly improves mood regulation."},
-        {"category": "Build Your Support Network", 
+        {"category": "Build Your Support Network", "icon": "/assets/excercise.png",
          "text": "Reach out to a trusted friend, family member, or helpline. Isolation worsens depression — connection heals it."},
     ],
 }
