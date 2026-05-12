@@ -1,5 +1,5 @@
 """
-MindCheck – Flask REST API
+MindCheck – Flask REST API  (Depression Classifier)
 Member 2: Backend Developer
 ============================
 Install : pip install flask flask-cors joblib pandas scikit-learn reportlab
@@ -9,7 +9,7 @@ Base URL: http://localhost:5000
 Endpoints
 ---------
 GET  /              → health check
-POST /predict       → run ML model, return stress classification
+POST /predict       → run depression ML model
 POST /export-pdf    → generate downloadable PDF report
 GET  /model-info    → model metadata + feature importances
 """
@@ -20,55 +20,43 @@ from datetime   import datetime
 from flask      import Flask, request, jsonify, send_file
 from flask_cors import CORS
 
-# ── import shared constants + inference function from ml/ ──
-ML_DIR = os.path.dirname(__file__)          # backend/
+ML_DIR = os.path.dirname(__file__)
 sys.path.insert(0, ML_DIR)
 from train_model import (
-    predict_stress,
-    MOOD_MAP,
+    predict_depression,
     FEATURE_COLS,
     LABEL_MAP,
     FEATURE_LABELS,
 )
 
 app = Flask(__name__)
-CORS(app)   # allow all origins (needed by Vite dev server on :3000)
+CORS(app)
 
-MODEL_DIR = os.path.join(ML_DIR, "model")  # backend/model/
+MODEL_DIR = os.path.join(ML_DIR, "model")
 
 # ─────────────────────────────────────────────
-# COPING SUGGESTIONS  (keyed by stress level)
+# COPING SUGGESTIONS  (keyed by prediction)
 # ─────────────────────────────────────────────
 COPING = {
-    "Low": [
-        {"category": "Maintenance",  "icon": "✅",
-         "text": "Your stress levels look healthy. Keep maintaining your current sleep schedule and social habits."},
-        {"category": "Exercise",     "icon": "🏃",
-         "text": "Light daily exercise (20–30 min walk) reinforces your low-stress baseline and boosts mood."},
-        {"category": "Mindfulness",  "icon": "🧘",
-         "text": "A 5-minute daily breathing exercise helps keep stress from creeping up during busy periods."},
-        {"category": "Social",       "icon": "🤝",
-         "text": "Continue nurturing your social connections — they are a proven buffer against future stress."},
+    "No Depression": [
+        {"category": "Maintain Your Balance", "icon": "✅",
+         "text": "You're showing resilience. Keep your current routines of adequate sleep, balanced meals, and social connection."},
+        {"category": "Stay Physically Active", "icon": "🏃",
+         "text": "Regular exercise (30 min/day) is a powerful preventive measure — it boosts mood and reduces future risk."},
+        {"category": "Academic Balance", "icon": "📚",
+         "text": "Take regular study breaks. The Pomodoro technique (25 min on, 5 min off) prevents cognitive burnout."},
+        {"category": "Stay Connected", "icon": "🤝",
+         "text": "Nurture your social network. Strong relationships act as a long-term buffer against depression."},
     ],
-    "Moderate": [
-        {"category": "Sleep",        "icon": "😴",
-         "text": "Prioritise 7–9 hours of sleep. Set a consistent bedtime and avoid screens 30 minutes before bed."},
-        {"category": "Workload",     "icon": "📋",
-         "text": "Try the Pomodoro technique: 25 min focused work + 5 min break. This prevents long-term burnout."},
-        {"category": "Social",       "icon": "💬",
-         "text": "Schedule at least one social activity this week — even a short call with a friend reduces cortisol."},
-        {"category": "Mindfulness",  "icon": "🧘",
-         "text": "Try a 10-minute guided meditation (Headspace, Calm) before bed to lower residual anxiety."},
-    ],
-    "High": [
-        {"category": "Urgent: Sleep","icon": "🚨",
-         "text": "Your sleep is critically affecting your health. See a doctor if you consistently sleep fewer than 6 hours."},
-        {"category": "Professional", "icon": "🏥",
-         "text": "Consider speaking with a mental health professional — high stress sustained over days is a clinical concern."},
-        {"category": "Immediate",    "icon": "🌬️",
-         "text": "Try box breathing right now: inhale 4s → hold 4s → exhale 4s → hold 4s. Repeat 5 times."},
-        {"category": "Reduce Load",  "icon": "⚠️",
-         "text": "Identify your top 3 stressors and discuss workload reduction with your manager or support network today."},
+    "Depression": [
+        {"category": "Seek Professional Help", "icon": "🏥",
+         "text": "Consider speaking with a counselor, therapist, or psychiatrist. Reaching out is a sign of strength, not weakness."},
+        {"category": "Reduce Your Load", "icon": "📋",
+         "text": "Talk to your academic advisor or employer about workload adjustments. Protecting your mental health comes first."},
+        {"category": "Prioritise Sleep", "icon": "😴",
+         "text": "Aim for 7–9 hours of sleep each night. A consistent sleep schedule significantly improves mood regulation."},
+        {"category": "Build Your Support Network", "icon": "💬",
+         "text": "Reach out to a trusted friend, family member, or helpline. Isolation worsens depression — connection heals it."},
     ],
 }
 
@@ -78,79 +66,62 @@ COPING = {
 # ─────────────────────────────────────────────
 def map_ui_to_features(data: dict) -> dict:
     """
-    Converts the simplified UI payload into the full 20-feature vector the
-    ML model expects.  Scales are matched to the training dataset:
-      anxiety_level  0-21  |  self_esteem   0-30  |  depression   0-27
-      headache       0-5   |  sleep_quality 0-5   |  study_load   0-5
-      future_career  0-5   |  peer_pressure 0-5   |  bullying     0-5
-      blood_pressure 1-3   |  breathing     0-5   |  social_support 0-3
+    Converts the simplified UI payload into the dataset column format the
+    ML pipeline expects.  Keys must match the training DataFrame columns exactly.
     """
-    mood_val  = MOOD_MAP.get(data.get("mood", "Neutral"), 15)   # 0-30
-    sleep_h   = float(data.get("sleep_hours",            7))
-    anxiety   = int(  data.get("anxiety_score",          5))    # UI 1-10
-    social    = int(  data.get("social_activity",        5))    # UI 1-10
-    work_h    = float(data.get("work_hours",             8))
-    dep_ui    = int(  data.get("depression",             3))    # UI 0-10
-    headache_ui = int(data.get("headache",               2))    # UI 0-10
-    career_ui = int(  data.get("future_career_concerns", 5))    # UI 0-10
-    peer_ui   = int(  data.get("peer_pressure",          3))    # UI 0-10
-
-    # Scale UI 1-10 → training 0-21
-    anxiety_scaled = min(21, round(anxiety * 2.1))
-    # Scale UI 0-10 → training 0-27
-    depression_scaled = min(27, round(dep_ui * 2.7))
-    # Sleep hours → quality score 0-5 (higher hours = better quality)
-    sleep_q = min(5, round((sleep_h - 2) / 10 * 5))
-    # Scale UI 0-10 → training 0-5
-    headache_scaled = min(5, round(headache_ui / 2))
-    study_ld        = min(5, round(work_h / 16 * 5))
-    career_scaled   = min(5, round(career_ui / 2))
-    peer_scaled     = min(5, round(peer_ui / 2))
-    # Social support UI 1-10 → 0-3
-    soc_sup = min(3, max(0, round(social / 3.5)))
-    # Binary toggles mapped to training scale
-    bp        = 3 if data.get("blood_pressure",  0) else 1   # 1=normal, 3=high
-    breathing = 4 if data.get("breathing_problem", 0) else 0  # 0-5 scale
-    bullying  = 5 if data.get("bullying",          0) else 0  # 0-5 scale
-
-    # Infer environmental factors (0-5) from visible stress indicators
-    stress_proxy = (anxiety / 10 + dep_ui / 10) / 2   # 0-1
-    living_cond = max(0, min(5, round(5 - stress_proxy * 4)))
-    safety_val  = max(0, min(5, round(5 - stress_proxy * 3)))
-    basic_needs = max(0, min(5, round(5 - stress_proxy * 3)))
-    acad_perf   = max(0, min(5, round(5 - stress_proxy * 4)))
-
     return {
-        "anxiety_level":                anxiety_scaled,
-        "self_esteem":                  mood_val,
-        "mental_health_history":        int(data.get("mental_health_history", 0)),
-        "depression":                   depression_scaled,
-        "headache":                     headache_scaled,
-        "blood_pressure":               bp,
-        "sleep_quality":                sleep_q,
-        "breathing_problem":            breathing,
-        "noise_level":                  3,
-        "living_conditions":            living_cond,
-        "safety":                       safety_val,
-        "basic_needs":                  basic_needs,
-        "academic_performance":         acad_perf,
-        "study_load":                   study_ld,
-        "teacher_student_relationship": 3,
-        "future_career_concerns":       career_scaled,
-        "social_support":               soc_sup,
-        "peer_pressure":                peer_scaled,
-        "extracurricular_activities":   3,
-        "bullying":                     bullying,
+        "Age":                                   float(data.get("age",                22)),
+        "Gender":                                data.get("gender",                   "Male"),
+        "Academic Pressure":                     float(data.get("academic_pressure",   2)),
+        "Work Pressure":                         float(data.get("work_pressure",       2)),
+        "CGPA":                                  float(data.get("cgpa",               7.0)),
+        "Study Satisfaction":                    float(data.get("study_satisfaction",  2)),
+        "Job Satisfaction":                      float(data.get("job_satisfaction",    2)),
+        "Work/Study Hours":                      float(data.get("work_study_hours",    6)),
+        "Financial Stress":                      float(data.get("financial_stress",    2)),
+        "Sleep Duration":                        data.get("sleep_duration",            "7-8 hours"),
+        "Dietary Habits":                        data.get("dietary_habits",            "Moderate"),
+        "Have you ever had suicidal thoughts ?": data.get("suicidal_thoughts",         "No"),
+        "Family History of Mental Illness":      data.get("family_history",            "No"),
     }
 
 
+# Sleep Duration → quality score 0-100 (higher = better sleep)
+_SLEEP_SCORES = {
+    "Less than 5 hours": 15,
+    "5-6 hours":         45,
+    "7-8 hours":         85,
+    "More than 8 hours": 65,
+    "Others":            50,
+}
+
+# Dietary Habits → satisfaction score 0-100
+_DIET_SCORES = {
+    "Healthy":   90,
+    "Moderate":  55,
+    "Unhealthy": 20,
+    "Others":    50,
+}
+
+
 def build_radar(feat: dict) -> dict:
+    sleep_score = _SLEEP_SCORES.get(feat.get("Sleep Duration", "7-8 hours"), 50)
+    diet_score  = _DIET_SCORES.get(feat.get("Dietary Habits",  "Moderate"),  55)
+
+    academic   = round(feat.get("Academic Pressure", 2) / 5 * 100)
+    financial  = round((feat.get("Financial Stress", 2) - 1) / 4 * 100)
+    workload   = round(feat.get("Work/Study Hours",  6) / 12 * 100)
+
+    study_sat  = feat.get("Study Satisfaction", 2) / 5
+    job_sat    = feat.get("Job Satisfaction",   2) / 4
+    satisfaction = round((study_sat + job_sat) / 2 * 100)
+
     return {
-        "sleep":    round(feat.get("sleep_quality",  3) / 5  * 100),   # 0-5
-        "anxiety":  round(feat.get("anxiety_level", 10) / 21 * 100),   # 0-21
-        "social":   round(feat.get("social_support", 2) / 3  * 100),   # 0-3
-        "workload": round(feat.get("study_load",      3) / 5  * 100),   # 0-5
-        "mood":     round(feat.get("self_esteem",    15) / 30 * 100),   # 0-30
+        "academic":     academic,
+        "financial":    financial,
+        "sleep":        sleep_score,
+        "workload":     workload,
+        "satisfaction": satisfaction,
     }
 
 
@@ -158,104 +129,101 @@ def build_radar(feat: dict) -> dict:
 # DISEASE RISK  (rule-based, uses raw UI values)
 # ─────────────────────────────────────────────
 def compute_disease_risk(ui: dict) -> list:
-    """
-    Returns a list of disease risk objects derived from the raw UI inputs.
-    Each entry: { condition, risk, icon, indicator }
-    """
-    anxiety  = int(  ui.get("anxiety_score",          5))   # 1-10
-    sleep_h  = float(ui.get("sleep_hours",             7))
-    dep      = int(  ui.get("depression",              3))   # 0-10
-    work_h   = float(ui.get("work_hours",              8))
-    headache = int(  ui.get("headache",                2))   # 0-10
-    career   = int(  ui.get("future_career_concerns",  5))   # 0-10
-    peer     = int(  ui.get("peer_pressure",           3))   # 0-10
-    social   = int(  ui.get("social_activity",         5))   # 1-10
-    bp       = int(  ui.get("blood_pressure",          0))   # 0/1
-    breathing= int(  ui.get("breathing_problem",       0))   # 0/1
-    bullying = int(  ui.get("bullying",                0))   # 0/1
-    mh_hist  = int(  ui.get("mental_health_history",   0))   # 0/1
-    mood     = ui.get("mood", "Neutral")
+    academic  = float(ui.get("academic_pressure",  2))   # 0-5
+    work      = float(ui.get("work_pressure",      2))   # 0-5
+    financial = float(ui.get("financial_stress",   2))   # 1-5
+    hours     = float(ui.get("work_study_hours",   6))   # 0-12
+    cgpa      = float(ui.get("cgpa",              7.0))  # 0-10
+    study_sat = float(ui.get("study_satisfaction", 2))   # 0-5
+    job_sat   = float(ui.get("job_satisfaction",   2))   # 0-4
+    sleep     = ui.get("sleep_duration",  "7-8 hours")
+    diet      = ui.get("dietary_habits",  "Moderate")
+    suicidal  = ui.get("suicidal_thoughts", "No")
+    family    = ui.get("family_history",    "No")
 
     risks = []
 
-    # ── Burnout Syndrome ─────────────────────────
-    burnout = (work_h / 16) * 0.40 + (career / 10) * 0.35 + (anxiety / 10) * 0.25
+    # ── Academic Burnout ──────────────────────
+    burnout = (academic / 5) * 0.40 + (hours / 12) * 0.35 + ((5 - study_sat) / 5) * 0.25
     if burnout > 0.45:
         risks.append({
-            "condition": "Burnout Syndrome",
-            "risk": "High" if burnout > 0.68 else "Moderate",
-            "icon": "🔥",
-            "indicator": "Sustained high workload combined with career anxiety can cause emotional exhaustion.",
+            "condition": "Academic Burnout",
+            "risk":      "High" if burnout > 0.68 else "Moderate",
+            "icon":      "🔥",
+            "indicator": "High academic pressure combined with long study hours and low satisfaction signals burnout.",
         })
 
-    # ── Generalized Anxiety Disorder ─────────────
-    gad = (anxiety / 10) * 0.45 + (breathing * 0.15) + (peer / 10) * 0.20 + \
-          (0.20 if mood in ("Very sad", "Stressed") else 0)
-    if gad > 0.45:
+    # ── Anxiety Disorder ──────────────────────
+    anxiety = (academic / 5) * 0.35 + (work / 5) * 0.30 + ((financial - 1) / 4) * 0.35
+    if anxiety > 0.45:
         risks.append({
-            "condition": "Generalized Anxiety Disorder",
-            "risk": "High" if gad > 0.68 else "Moderate",
-            "icon": "😰",
-            "indicator": "Persistent high anxiety with physical symptoms such as breathing issues is a clinical marker.",
+            "condition": "Anxiety Disorder",
+            "risk":      "High" if anxiety > 0.68 else "Moderate",
+            "icon":      "😰",
+            "indicator": "Persistent academic, work, and financial pressure are major risk factors for anxiety disorder.",
         })
 
-    # ── Clinical Depression ───────────────────────
-    dep_score = (dep / 10) * 0.50 + ((10 - social) / 10) * 0.30 + \
-                (0.20 if mood == "Very sad" else 0.10 if mood == "Stressed" else 0)
-    if dep_score > 0.38:
+    # ── Sleep Disorder ────────────────────────
+    if sleep in ("Less than 5 hours", "5-6 hours"):
         risks.append({
-            "condition": "Clinical Depression",
-            "risk": "High" if dep_score > 0.62 else "Moderate",
-            "icon": "🌧️",
-            "indicator": "Elevated depression scores combined with social withdrawal are key diagnostic markers.",
+            "condition": "Sleep Disorder / Insomnia",
+            "risk":      "High" if sleep == "Less than 5 hours" else "Moderate",
+            "icon":      "😴",
+            "indicator": f"Sleeping {sleep} is below the recommended 7–9 hours and worsens depression and cognitive function.",
         })
 
-    # ── Insomnia / Sleep Disorder ─────────────────
-    insomnia = (max(0, 8 - sleep_h) / 6) * 0.60 + (anxiety / 10) * 0.40
-    if insomnia > 0.38:
+    # ── Nutritional Imbalance ─────────────────
+    if diet == "Unhealthy":
         risks.append({
-            "condition": "Insomnia / Sleep Disorder",
-            "risk": "High" if sleep_h < 5 and anxiety > 6 else "Moderate",
-            "icon": "😴",
-            "indicator": f"Sleeping {sleep_h:.0f} h/night with elevated anxiety chronically disrupts restorative sleep.",
+            "condition": "Nutritional Imbalance",
+            "risk":      "Moderate",
+            "icon":      "🥗",
+            "indicator": "Poor dietary habits are linked to increased depression risk and reduced cognitive performance.",
         })
 
-    # ── Tension Headache / Migraine ───────────────
-    head_score = (headache / 10) * 0.50 + (anxiety / 10) * 0.30 + (work_h / 16) * 0.20
-    if head_score > 0.38:
+    # ── Hereditary / Family Risk ──────────────
+    if family == "Yes":
+        fam_score = 0.55 + ((financial - 1) / 4) * 0.25 + (academic / 5) * 0.20
         risks.append({
-            "condition": "Tension Headache / Migraine",
-            "risk": "High" if head_score > 0.60 else "Moderate",
-            "icon": "🤕",
-            "indicator": "Frequent headaches under sustained stress suggest a chronic tension pattern.",
+            "condition": "Hereditary Depression Risk",
+            "risk":      "High" if fam_score > 0.72 else "Moderate",
+            "icon":      "🧬",
+            "indicator": "Family history of mental illness significantly raises personal risk. Proactive monitoring is advised.",
         })
 
-    # ── Hypertension Risk ─────────────────────────
-    if bp:
-        hyp = 0.50 + (anxiety / 10) * 0.30 + (max(0, 8 - sleep_h) / 6) * 0.20
+    # ── Suicidal Ideation History ─────────────
+    if suicidal == "Yes":
         risks.append({
-            "condition": "Hypertension Risk",
-            "risk": "High" if hyp > 0.70 else "Moderate",
-            "icon": "❤️",
-            "indicator": "Existing blood pressure issues are significantly amplified by chronic stress and poor sleep.",
+            "condition": "Mental Health Crisis Risk",
+            "risk":      "High",
+            "icon":      "🛡️",
+            "indicator": "A history of suicidal thoughts requires professional mental health support. Please consult a specialist.",
         })
 
-    # ── PTSD / Trauma-related ─────────────────────
-    if bullying and (anxiety > 6 or dep > 5):
+    # ── Academic Underperformance ─────────────
+    if cgpa < 5.0 and academic > 3:
         risks.append({
-            "condition": "Trauma / PTSD Risk",
-            "risk": "High" if anxiety > 7 and dep > 6 else "Moderate",
-            "icon": "🛡️",
-            "indicator": "Exposure to bullying alongside high anxiety and depression can trigger trauma responses.",
+            "condition": "Academic Stress Syndrome",
+            "risk":      "Moderate",
+            "icon":      "📚",
+            "indicator": "Low CGPA combined with high academic pressure creates a cycle of stress and poor performance.",
         })
 
-    # ── All clear ─────────────────────────────────
+    # ── Financial Depression ──────────────────
+    if financial > 3.5 and job_sat < 2:
+        risks.append({
+            "condition": "Financial Stress Syndrome",
+            "risk":      "High" if financial > 4.5 else "Moderate",
+            "icon":      "💸",
+            "indicator": "Severe financial stress combined with low job satisfaction is a significant depression trigger.",
+        })
+
     if not risks:
         risks.append({
-            "condition": "No Significant Disease Risk Detected",
-            "risk": "Low",
-            "icon": "✅",
-            "indicator": "Your current metrics do not indicate immediate disease risk. Keep maintaining healthy habits.",
+            "condition": "No Significant Risk Detected",
+            "risk":      "Low",
+            "icon":      "✅",
+            "indicator": "Your current metrics suggest a balanced lifestyle. Continue maintaining your healthy habits.",
         })
 
     return risks
@@ -266,11 +234,11 @@ def compute_disease_risk(ui: dict) -> list:
 # ─────────────────────────────────────────────
 @app.route("/", methods=["GET"])
 def health():
-    model_ok = os.path.exists(os.path.join(MODEL_DIR, "stress_model.pkl"))
+    model_ok = os.path.exists(os.path.join(MODEL_DIR, "depression_model.pkl"))
     return jsonify({
         "status":      "ok",
-        "service":     "MindCheck Stress Classifier API",
-        "version":     "2.0.0",
+        "service":     "MindCheck Depression Classifier API",
+        "version":     "3.0.0",
         "model_ready": model_ok,
         "features":    len(FEATURE_COLS),
     })
@@ -282,31 +250,34 @@ def predict():
     POST /predict
     Body (JSON) – fields sent by the React frontend:
     {
-        sleep_hours, anxiety_score, social_activity, work_hours, mood,
-        depression, future_career_concerns, peer_pressure, headache,
-        mental_health_history, blood_pressure, breathing_problem, bullying
+        age, gender, academic_pressure, work_pressure, cgpa,
+        study_satisfaction, job_satisfaction, work_study_hours,
+        financial_stress, sleep_duration, dietary_habits,
+        suicidal_thoughts, family_history
     }
     """
     try:
-        data        = request.get_json(force=True)
-        features    = map_ui_to_features(data)
-        result      = predict_stress(features)
-        radar       = build_radar(features)
+        data         = request.get_json(force=True)
+        features     = map_ui_to_features(data)
+        result       = predict_depression(features)
+        radar        = build_radar(features)
         disease_risk = compute_disease_risk(data)
 
+        prediction = result["stressLevel"]   # "Depression" or "No Depression"
+
         return jsonify({
-            "stressLevel":       result["stressLevel"],
+            "stressLevel":       prediction,
             "confidence":        result["confidence"],
             "probabilities":     result["probabilities"],
             "radarScores":       radar,
             "featureImportance": result["featureImportance"][:5],
-            "suggestions":       COPING[result["stressLevel"]],
+            "suggestions":       COPING.get(prediction, COPING["No Depression"]),
             "diseaseRisk":       disease_risk,
             "timestamp":         datetime.now().isoformat(),
         })
 
     except FileNotFoundError:
-        return jsonify({"error": "Model not trained yet. Run: cd ml && python train_model.py"}), 503
+        return jsonify({"error": "Model not found. Run: cd backend && python train_model.py"}), 503
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -316,7 +287,7 @@ def export_pdf():
     """
     POST /export-pdf
     Body: the full predict response JSON the frontend already has.
-    Returns a downloadable PDF file.
+    Returns a downloadable PDF report.
     """
     try:
         from reportlab.lib.pagesizes   import A4
@@ -327,13 +298,13 @@ def export_pdf():
                                                Spacer, Table, TableStyle,
                                                HRFlowable)
 
-        data  = request.get_json(force=True)
-        level = data.get("stressLevel", "N/A")
-        conf  = data.get("confidence",  0)
-        sugs  = data.get("suggestions", [])
-        imp   = data.get("featureImportance", [])
-        probs = data.get("probabilities", {})
-        ts    = data.get("timestamp", datetime.now().isoformat())[:19].replace("T", " ")
+        data      = request.get_json(force=True)
+        level     = data.get("stressLevel", "N/A")
+        conf      = data.get("confidence",  0)
+        sugs      = data.get("suggestions", [])
+        imp       = data.get("featureImportance", [])
+        probs     = data.get("probabilities", {})
+        ts        = data.get("timestamp", datetime.now().isoformat())[:19].replace("T", " ")
 
         buf = io.BytesIO()
         doc = SimpleDocTemplate(buf, pagesize=A4,
@@ -349,22 +320,19 @@ def export_pdf():
                 textColor=colors.HexColor(color),
             ))
 
-        # Title block
         story += [
-            P("MindCheck — Stress Assessment Report", 20, bold=True, space=4),
+            P("MindCheck — Depression Assessment Report", 20, bold=True, space=4),
             P(f"Generated: {ts}", 10, color="#9c968f", space=14),
             HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e8e4de")),
             Spacer(1, 0.4*cm),
         ]
 
-        # Result
-        level_color = {"Low": "#15803d", "Moderate": "#b45309", "High": "#b91c1c"}.get(level, "#000")
-        story.append(P(f'Stress Level: <font color="{level_color}"><b>{level}</b></font>'
+        level_color = {"No Depression": "#15803d", "Depression": "#b91c1c"}.get(level, "#000")
+        story.append(P(f'Prediction: <font color="{level_color}"><b>{level}</b></font>'
                        f'&nbsp;&nbsp;|&nbsp;&nbsp;Confidence: <b>{conf}%</b>', 14, space=14))
 
-        # Probability table
         story.append(P("Probability Distribution", 12, bold=True, space=6))
-        prob_data = [["Class", "Probability"]] + [[k, f"{v}%"] for k, v in probs.items()]
+        prob_data = [["Outcome", "Probability"]] + [[k, f"{v}%"] for k, v in probs.items()]
         t = Table(prob_data, colWidths=[8*cm, 8*cm])
         t.setStyle(TableStyle([
             ("BACKGROUND",     (0, 0), (-1, 0), colors.HexColor("#1c1916")),
@@ -377,7 +345,6 @@ def export_pdf():
         ]))
         story += [t, Spacer(1, 0.5*cm)]
 
-        # Feature importance table
         if imp:
             story.append(P("Top Contributing Factors", 12, bold=True, space=6))
             imp_data = [["Factor", "Importance"]] + [[i["label"], f"{i['pct']}%"] for i in imp]
@@ -393,26 +360,23 @@ def export_pdf():
             ]))
             story += [t2, Spacer(1, 0.5*cm)]
 
-        # Suggestions
-        story.append(P("Personalised Coping Suggestions", 12, bold=True, space=6))
+        story.append(P("Personalised Recommendations", 12, bold=True, space=6))
         for s in sugs:
-            story.append(P(f'<b>{s["icon"]} {s["category"]}</b>', 10,
-                           color="#c8440a", space=2))
+            story.append(P(f'<b>{s["icon"]} {s["category"]}</b>', 10, color="#c8440a", space=2))
             story.append(P(s["text"], 10, space=10))
 
-        # Disclaimer
         story += [
             Spacer(1, 0.4*cm),
             HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e8e4de")),
             Spacer(1, 0.2*cm),
             P("This report is for informational purposes only and does not constitute "
-              "medical advice. If you are experiencing severe distress, please consult "
-              "a qualified healthcare professional.", 8, color="#9c968f"),
+              "medical advice. If you are experiencing distress, please consult a "
+              "qualified mental health professional.", 8, color="#9c968f"),
         ]
 
         doc.build(story)
         buf.seek(0)
-        fname = f"stress_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        fname = f"depression_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         return send_file(buf, mimetype="application/pdf",
                          as_attachment=True, download_name=fname)
 
@@ -424,18 +388,13 @@ def export_pdf():
 
 @app.route("/model-info", methods=["GET"])
 def model_info():
-    try:
-        imp = joblib.load(os.path.join(MODEL_DIR, "importance.pkl")) if \
-              os.path.exists(os.path.join(MODEL_DIR, "importance.pkl")) else []
-    except Exception:
-        imp = []
     return jsonify({
-        "model":             "Random Forest (150 trees, max_depth=12)",
-        "features":          len(FEATURE_COLS),
-        "feature_list":      FEATURE_COLS,
-        "classes":           list(LABEL_MAP.values()),
-        "dataset":           "Student Stress Factors — Kaggle (CC0)",
-        "featureImportance": imp,
+        "model":       "Logistic Regression / Random Forest (auto-selected)",
+        "features":    len(FEATURE_COLS),
+        "feature_list": FEATURE_COLS,
+        "classes":     list(LABEL_MAP.values()),
+        "dataset":     "Student Depression Dataset (27,901 records)",
+        "featureLabels": FEATURE_LABELS,
     })
 
 
@@ -443,10 +402,9 @@ def model_info():
 # ENTRY POINT
 # ─────────────────────────────────────────────
 if __name__ == "__main__":
-    import joblib
-    if not os.path.exists(os.path.join(MODEL_DIR, "stress_model.pkl")):
-        print("⚠  Model not found. Run:  cd ml && python train_model.py")
+    if not os.path.exists(os.path.join(MODEL_DIR, "depression_model.pkl")):
+        print("⚠  Model not found. Run:  python train_model.py")
     else:
-        print("✓  Model loaded — 20 features active")
+        print("✓  Depression model loaded — 13 features active")
     print("✓  API starting on http://localhost:5000")
     app.run(debug=True, host="0.0.0.0", port=5000)
