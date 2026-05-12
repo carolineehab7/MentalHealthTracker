@@ -15,12 +15,13 @@ GET  /model-info    → model metadata + feature importances
 """
 
 import io, os, sys, json
+import joblib
 from datetime   import datetime
 from flask      import Flask, request, jsonify, send_file
 from flask_cors import CORS
 
 # ── import shared constants + inference function from ml/ ──
-ML_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+ML_DIR = os.path.dirname(__file__)          # backend/
 sys.path.insert(0, ML_DIR)
 from train_model import (
     predict_stress,
@@ -33,7 +34,7 @@ from train_model import (
 app = Flask(__name__)
 CORS(app)   # allow all origins (needed by Vite dev server on :3000)
 
-MODEL_DIR = os.path.join(ML_DIR, "model")
+MODEL_DIR = os.path.join(ML_DIR, "model")  # backend/model/
 
 # ─────────────────────────────────────────────
 # COPING SUGGESTIONS  (keyed by stress level)
