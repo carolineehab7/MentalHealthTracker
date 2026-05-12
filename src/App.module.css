@@ -5,13 +5,13 @@
 
 /* ── Sidebar ── */
 .sidebar {
-  width: 230px;
+  width: 240px;
   flex-shrink: 0;
-  background: var(--card);
-  border-right: 1px solid var(--border);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
-  padding: 1.5rem 1rem;
+  padding: 1.75rem 1rem;
   position: sticky;
   top: 0;
   height: 100vh;
@@ -21,71 +21,133 @@
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border);
+  gap: 12px;
+  margin-bottom: 2.25rem;
+  padding-bottom: 1.75rem;
+  border-bottom: 1px solid var(--sidebar-border);
 }
-.brandIcon { font-size: 28px; line-height: 1; }
-.brandName { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
-.brandSub  { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+.brandIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
+  flex-shrink: 0;
+}
+
+.brandName {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: -0.01em;
+}
+
+.brandSub {
+  font-size: 11px;
+  color: var(--sidebar-text);
+  margin-top: 1px;
+  font-weight: 400;
+}
 
 /* ── Nav links ── */
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   flex: 1;
 }
 
 .navLink {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   padding: 10px 12px;
   border-radius: var(--r);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
-  color: var(--text2);
+  color: var(--sidebar-text);
   text-decoration: none;
-  transition: all 0.14s;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.005em;
 }
-.navLink:hover { background: var(--bg); color: var(--text); }
-.navLinkActive  { background: var(--accent-l) !important; color: var(--accent) !important; }
+
+.navLink:hover {
+  background: var(--sidebar-hover);
+  color: #e2e8f0;
+}
+
+.navLinkActive {
+  background: var(--sidebar-active) !important;
+  color: var(--sidebar-accent) !important;
+  font-weight: 600;
+}
 
 /* ── Footer ── */
 .footer {
   margin-top: auto;
   padding-top: 1.5rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--sidebar-border);
 }
+
 .modelBadge {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--blue);
-  background: var(--blue-l);
-  padding: 6px 10px;
-  border-radius: 6px;
+  color: var(--sidebar-accent);
+  background: rgba(37, 99, 235, 0.15);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  padding: 7px 10px;
+  border-radius: 8px;
   margin-bottom: 10px;
 }
-.disclaimer { font-size: 10.5px; color: var(--text3); line-height: 1.6; }
+
+.disclaimer {
+  font-size: 10.5px;
+  color: var(--sidebar-text);
+  line-height: 1.65;
+  opacity: 0.65;
+}
 
 /* ── Main ── */
-.main { flex: 1; overflow-y: auto; min-width: 0; }
+.main {
+  flex: 1;
+  overflow-y: auto;
+  min-width: 0;
+}
 
 /* ── Mobile ── */
 @media (max-width: 768px) {
-  .shell    { flex-direction: column; }
-  .sidebar  {
-    width: 100%; height: auto; position: static;
-    flex-direction: row; align-items: center;
-    padding: 0.75rem 1rem;
-    border-right: none; border-bottom: 1px solid var(--border);
+  .shell {
+    flex-direction: column;
   }
-  .brand  { margin-bottom: 0; padding-bottom: 0; border-bottom: none; margin-right: auto; }
-  .nav    { flex-direction: row; flex: unset; }
-  .footer { display: none; }
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    padding: 0.85rem 1rem;
+    border-right: none;
+    border-bottom: 1px solid var(--sidebar-border);
+  }
+  .brand {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+    margin-right: auto;
+  }
+  .nav {
+    flex-direction: row;
+    flex: unset;
+  }
+  .footer {
+    display: none;
+  }
 }
