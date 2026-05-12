@@ -1,6 +1,5 @@
 """
 MindCheck - Depression Classifier
-Member 1: ML Engineer
 =======================
 Dataset : Student Depression Dataset.csv (27,901 rows)
 Install : pip install pandas scikit-learn joblib matplotlib seaborn

@@ -1,6 +1,5 @@
 """
 MindCheck – Flask REST API  (Depression Classifier)
-Member 2: Backend Developer
 ============================
 Install : pip install flask flask-cors joblib pandas scikit-learn reportlab
 Run     : python app.py
@@ -311,7 +310,7 @@ def export_pdf():
         BODY_FONT = "Times-Roman"
         BOLD_FONT = "Times-Bold"
         ITALIC_FONT = "Times-Italic"
-        BASE_SIZE = 13
+        BASE_SIZE = 16
         BASE_COLOR = "#1f2937"
         ASSET_DIR = os.path.abspath(os.path.join(ML_DIR, "..", "src", "assets"))
 
@@ -367,16 +366,16 @@ def export_pdf():
 
         HELP_ORGS = [
             {
-                "name": "Befrienders Worldwide",
-                "meta": "Global",
-                "desc": "Find support lines in your country.",
-                "url": "https://www.befrienders.org/",
+                "name": "MENTAL HEALTH AND ADDICTION TREATMENT",
+                "meta": "Egypt",
+                "desc": "",
+                "url": "https://mentalhealth.mohp.gov.eg/mental/web/en",
             },
             {
-                "name": "International Association for Suicide Prevention",
-                "meta": "Global",
-                "desc": "Directory of crisis centers worldwide.",
-                "url": "https://www.iasp.info/resources/Crisis_Centres/",
+                "name": "Presidential Initiative to Support Mental Health",
+                "meta": "Egypt",
+                "desc": "",
+                "url": "http://81.21.105.24/umhealth/depression-anxiety/",
             },
             {
                 "name": "WHO Mental Health Resources",
@@ -385,10 +384,10 @@ def export_pdf():
                 "url": "https://www.who.int/health-topics/mental-health#tab=tab_1",
             },
             {
-                "name": "988 Lifeline",
-                "meta": "United States",
-                "desc": "Call or text 988 for 24/7 support.",
-                "url": "https://988lifeline.org/",
+                "name": "Call",
+                "meta": "Egypt",
+                "desc": "Call: 16328/ 16023/ 0220816831/ 08008880700",
+                "url": "",
             },
         ]
 
@@ -520,12 +519,24 @@ def export_pdf():
                 icon = s.get("icon", "")
                 category = s.get("category", "").lower()
                 action = short_action(s.get("text", ""))
-                icon_path = icon_for_category(category)
+                
+                # Resolve relative icon path to absolute for PDF
+                icon_path = None
+                if isinstance(icon, str) and icon:
+                    # Convert relative path like "./../src/assets/life-skills.png" to absolute
+                    resolved_icon = os.path.abspath(os.path.join(ML_DIR, icon))
+                    if os.path.exists(resolved_icon):
+                        icon_path = resolved_icon
+                
+                # Fall back to category-based lookup
+                if not icon_path:
+                    icon_path = icon_for_category(category)
+                
                 if icon_path:
                     icon_flowable = Image(icon_path, width=1.0 * cm, height=1.0 * cm)
                 else:
                     icon_flowable = Paragraph(
-                        f"<para align='center'><font size='14'>{icon}</font></para>",
+                        f"<para align='center'><font size='14'>🎯</font></para>",
                         rec_style,
                     )
                 cell_text = Paragraph(
@@ -541,15 +552,15 @@ def export_pdf():
                     cells[i + 1] if i + 1 < len(cells) else "",
                 ])
 
-            row_heights = [2.2 * cm] * len(rows)
-            table = Table(rows, colWidths=[doc.width / 2, doc.width / 2], rowHeights=row_heights)
+            row_heights = [3.2 * cm] * len(rows)
+            table = Table(rows, colWidths=[0.55 * doc.width, 0.55 * doc.width], rowHeights=row_heights)
             table.setStyle(TableStyle([
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                 ("LEFTPADDING", (0, 0), (-1, -1), 6),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-                ("TOPPADDING", (0, 0), (-1, -1), 6),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 12),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
             ]))
             return table
 
@@ -600,15 +611,15 @@ def export_pdf():
                     cells[i + 1][0] if i + 1 < len(cells) else "",
                 ])
 
-            row_heights = [2.2 * cm] * len(rows)
-            table = Table(rows, colWidths=[doc.width / 2, doc.width / 2], rowHeights=row_heights)
+            row_heights = [3.2 * cm] * len(rows)
+            table = Table(rows, colWidths=[0.55 * doc.width, 0.55 * doc.width], rowHeights=row_heights)
             table.setStyle(TableStyle([
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                 ("LEFTPADDING", (0, 0), (-1, -1), 6),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-                ("TOPPADDING", (0, 0), (-1, -1), 4),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ("TOPPADDING", (0, 0), (-1, -1), 12),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
             ]))
             return table
 
@@ -662,6 +673,9 @@ def export_pdf():
             ("RIGHTPADDING", (0, 0), (-1, -1), 0),
             ("TOPPADDING", (0, 0), (-1, -1), 14),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 14),
+            ("LINEBELOW", (0, 0), (-1, 2), 0.5, colors.HexColor("#c0bfbf")),
+            ("LINEBELOW", (0, 1), (-1, 1), 0.5, colors.HexColor("#c0bfbf")),
+            ("LINEBELOW", (0, 2), (-1, 2), 0.5, colors.HexColor("#c0bfbf")),
         ]))
         story += [sections, Spacer(1, 0.2 * cm)]
 
