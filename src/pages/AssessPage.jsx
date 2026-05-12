@@ -1,5 +1,10 @@
 import { useState } from 'react'
 import {
+  Frown, Zap, Meh, Smile, SmilePlus,
+  Activity, Heart, Shield,
+  Brain, HeartPulse, Wind, Users,
+} from 'lucide-react'
+import {
   Card, SLabel, Pill,
   SliderField, ToggleField, MoodButton,
   BtnPrimary, SpinnerCard, ErrorBox,
@@ -10,11 +15,11 @@ import styles from './AssessPage.module.css'
 
 /* ── Mood options ── */
 const MOODS = [
-  { emoji: '😢', label: 'Very sad' },
-  { emoji: '😟', label: 'Stressed' },
-  { emoji: '😐', label: 'Neutral'  },
-  { emoji: '🙂', label: 'Good'     },
-  { emoji: '😊', label: 'Great'    },
+  { icon: Frown,     label: 'Very sad'  },
+  { icon: Zap,       label: 'Stressed'  },
+  { icon: Meh,       label: 'Neutral'   },
+  { icon: Smile,     label: 'Good'      },
+  { icon: SmilePlus, label: 'Great'     },
 ]
 
 /* ── Initial slider state ── */
@@ -76,7 +81,7 @@ export default function AssessPage() {
 
       {/* ── Core metrics ── */}
       <Card>
-        <SLabel>Core daily metrics</SLabel>
+        <SLabel icon={Activity}>Core daily metrics</SLabel>
         <div className={styles.grid2}>
           <SliderField
             label="Sleep hours / night" id="sleep"
@@ -131,12 +136,12 @@ export default function AssessPage() {
 
       {/* ── Mood ── */}
       <Card>
-        <SLabel>Current mood</SLabel>
+        <SLabel icon={Heart}>Current mood</SLabel>
         <div className={styles.moodGrid}>
           {MOODS.map(m => (
             <MoodButton
               key={m.label}
-              emoji={m.emoji}
+              icon={m.icon}
               label={m.label}
               active={mood === m.label}
               onClick={() => setMood(m.label)}
@@ -147,26 +152,30 @@ export default function AssessPage() {
 
       {/* ── Health conditions ── */}
       <Card>
-        <SLabel>Additional health conditions</SLabel>
+        <SLabel icon={Shield}>Additional health conditions</SLabel>
         <ToggleField
+          icon={Brain}
           label="Mental health history"
           sub="Have you had prior mental health issues?"
           checked={inputs.mental_health_history}
           onChange={v => set('mental_health_history', v)}
         />
         <ToggleField
+          icon={HeartPulse}
           label="Blood pressure issues"
           sub="High or low blood pressure diagnosed"
           checked={inputs.blood_pressure}
           onChange={v => set('blood_pressure', v)}
         />
         <ToggleField
+          icon={Wind}
           label="Breathing problems"
           sub="Asthma, shortness of breath, etc."
           checked={inputs.breathing_problem}
           onChange={v => set('breathing_problem', v)}
         />
         <ToggleField
+          icon={Users}
           label="Experience of bullying"
           sub="Current or recent bullying situation"
           checked={inputs.bullying}

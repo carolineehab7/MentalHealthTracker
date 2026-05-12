@@ -164,9 +164,28 @@
   align-items: center;
   padding: 14px 0;
   border-bottom: 1px solid var(--border);
+  gap: 12px;
 }
 .toggleRow:last-child {
   border-bottom: none;
+}
+.toggleInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.toggleIconWrap {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-l);
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: 10px;
+  color: var(--accent);
+  flex-shrink: 0;
 }
 .toggleLabel {
   font-size: 14px;
@@ -226,10 +245,14 @@
   border-radius: var(--r);
   background: var(--card);
   cursor: pointer;
-  padding: 14px 4px;
+  padding: 16px 8px;
   text-align: center;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
 }
 .moodBtn:hover {
   background: var(--accent-l);
@@ -245,18 +268,28 @@
     0 6px 16px rgba(37, 99, 235, 0.14) !important;
   transform: translateY(-3px) !important;
 }
-.moodEmoji {
-  font-size: 26px;
+.moodIcon {
   display: block;
-  line-height: 1;
+  margin: 0 auto;
+  color: var(--text3);
+  transition: color 0.2s ease;
+}
+.moodBtn:hover .moodIcon,
+.moodActive .moodIcon {
+  color: var(--accent);
 }
 .moodLabel {
   font-size: 10px;
   color: var(--text3);
   display: block;
-  margin-top: 6px;
+  margin-top: 7px;
   font-weight: 500;
   letter-spacing: 0.02em;
+  transition: color 0.2s ease;
+}
+.moodBtn:hover .moodLabel,
+.moodActive .moodLabel {
+  color: var(--accent);
 }
 
 /* ── Buttons ── */
@@ -509,6 +542,15 @@
   line-height: 1.65;
   margin-top: 1rem;
   animation: fadeUp 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.errorHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-weight: 500;
 }
 .errorBox code {
   background: rgba(220, 38, 38, 0.1);

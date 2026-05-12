@@ -7,8 +7,13 @@ export function Card({ children, className = "" }) {
 }
 
 /* ── Section label ── */
-export function SLabel({ children }) {
-  return <p className={styles.slabel}>{children}</p>;
+export function SLabel({ children, icon: Icon }) {
+  return (
+    <p className={styles.slabel}>
+      {Icon && <Icon size={13} strokeWidth={2.5} />}
+      {children}
+    </p>
+  );
 }
 
 /* ── Pill badge ── */
@@ -78,12 +83,19 @@ export function SliderField({
 }
 
 /* ── Toggle switch ── */
-export function ToggleField({ label, sub, checked, onChange }) {
+export function ToggleField({ icon: Icon, label, sub, checked, onChange }) {
   return (
     <div className={styles.toggleRow}>
-      <div>
-        <div className={styles.toggleLabel}>{label}</div>
-        {sub && <div className={styles.toggleSub}>{sub}</div>}
+      <div className={styles.toggleInfo}>
+        {Icon && (
+          <div className={styles.toggleIconWrap}>
+            <Icon size={16} strokeWidth={2} />
+          </div>
+        )}
+        <div>
+          <div className={styles.toggleLabel}>{label}</div>
+          {sub && <div className={styles.toggleSub}>{sub}</div>}
+        </div>
       </div>
       <label className={styles.toggle}>
         <input
@@ -98,14 +110,14 @@ export function ToggleField({ label, sub, checked, onChange }) {
 }
 
 /* ── Mood button ── */
-export function MoodButton({ emoji, label, active, onClick }) {
+export function MoodButton({ icon: Icon, label, active, onClick }) {
   return (
     <button
       type="button"
       className={`${styles.moodBtn} ${active ? styles.moodActive : ""}`}
       onClick={onClick}
     >
-      <span className={styles.moodEmoji}>{emoji}</span>
+      <Icon size={24} strokeWidth={1.75} className={styles.moodIcon} />
       <span className={styles.moodLabel}>{label}</span>
     </button>
   );
@@ -218,8 +230,10 @@ export function SpinnerCard() {
 export function ErrorBox({ message }) {
   return (
     <div className={styles.errorBox}>
-      ⚠️ {message}
-      <br />
+      <div className={styles.errorHeader}>
+        <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
+        <span>{message}</span>
+      </div>
       <small>
         Make sure the Flask server is running:{" "}
         <code>cd backend &amp;&amp; python app.py</code>
