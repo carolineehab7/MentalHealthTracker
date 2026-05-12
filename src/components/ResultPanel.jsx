@@ -1,4 +1,4 @@
-import { FileDown, Sparkles, ShieldCheck } from "lucide-react";
+import { FileDown, Sparkles, ShieldCheck, AlertTriangle } from "lucide-react";
 import {
   Card,
   SLabel,
@@ -9,22 +9,25 @@ import {
   SugItem,
   BtnDanger,
   BtnOutline,
-  AlertHigh,
   Divider,
 } from "./UI";
 import RadarChartPanel from "./RadarChartPanel";
 import styles from "./ResultPanel.module.css";
 
 const PROB_COLORS = {
-  Low: "#22c55e",
-  Moderate: "#f59e0b",
-  High: "#ef4444",
+  "No Depression": "#22c55e",
+  "Depression":    "#ef4444",
+  "Low":           "#22c55e",
+  "Moderate":      "#f59e0b",
+  "High":          "#ef4444",
 };
 
 const LEVEL_COLORS = {
-  Low: "var(--ok)",
-  Moderate: "var(--warn)",
-  High: "var(--danger)",
+  "No Depression": "var(--ok)",
+  "Depression":    "var(--danger)",
+  "Low":           "var(--ok)",
+  "Moderate":      "var(--warn)",
+  "High":          "var(--danger)",
 };
 
 const RISK_COLORS = {
@@ -32,6 +35,29 @@ const RISK_COLORS = {
   Moderate: { bg: "#fffbeb", border: "#fcd34d", text: "#b45309" },
   High:     { bg: "#fef2f2", border: "#fca5a5", text: "#b91c1c" },
 };
+
+function DepressionAlert() {
+  return (
+    <div className={styles.alertDep}>
+      <div className={styles.alertIcon}>
+        <AlertTriangle size={22} />
+      </div>
+      <div className={styles.alertText}>
+        <strong>Depression indicators detected.</strong> If you have been feeling
+        this way for two weeks or more, please speak with a mental health
+        professional.{" "}
+        <a
+          href="https://www.who.int/news-room/fact-sheets/detail/depression"
+          target="_blank"
+          rel="noreferrer"
+          style={{ color: "var(--danger)" }}
+        >
+          WHO Depression Resources →
+        </a>
+      </div>
+    </div>
+  );
+}
 
 function DiseaseRiskCard({ condition, risk, icon, indicator }) {
   const c = RISK_COLORS[risk] || RISK_COLORS.Low;
@@ -72,14 +98,16 @@ export default function ResultPanel({ data, onExportPDF, onClear }) {
     diseaseRisk,
   } = data;
 
+  const isDepression = stressLevel === "Depression";
   const probs = probabilities || {};
-  const imp = featureImportance || [];
-  const sugs = suggestions || [];
+  const imp   = featureImportance || [];
+  const sugs  = suggestions || [];
   const maxImp = imp.length ? imp[0].pct : 1;
+  const probEntries = Object.entries(probs);
 
   return (
     <div className={styles.wrap}>
-      {stressLevel === "High" && <AlertHigh />}
+      {isDepression && <DepressionAlert />}
 
       <Card>
         {/* ── Header ── */}
@@ -87,7 +115,7 @@ export default function ResultPanel({ data, onExportPDF, onClear }) {
           <div>
             <div className={styles.title}>Assessment Result</div>
             <div className={styles.sub}>
-              Based on your reported health metrics across 20 clinical factors.
+              Based on your academic and lifestyle profile across 13 clinical features.
             </div>
           </div>
           <StressBadge level={stressLevel} />
@@ -97,23 +125,26 @@ export default function ResultPanel({ data, onExportPDF, onClear }) {
         <div className={styles.statsRow}>
           <StatBox
             value={stressLevel}
-            label="Stress level"
+            label="Prediction"
             color={LEVEL_COLORS[stressLevel]}
           />
           <StatBox value={`${confidence}%`} label="Model confidence" />
-          <StatBox value={`${probs.Low ?? 0}%`} label="Chance of Low" />
+          <StatBox
+            value={`${probs["No Depression"] ?? probs["Low"] ?? 0}%`}
+            label="Chance of no depression"
+          />
         </div>
 
         <Divider />
 
         {/* ── Probability bars ── */}
         <SLabel>Probability distribution</SLabel>
-        {["Low", "Moderate", "High"].map((l) => (
+        {probEntries.map(([label, pct]) => (
           <ProbBar
-            key={l}
-            label={l}
-            pct={probs[l] ?? 0}
-            color={PROB_COLORS[l]}
+            key={label}
+            label={label}
+            pct={pct}
+            color={PROB_COLORS[label] ?? "#6b7280"}
           />
         ))}
 
@@ -132,14 +163,14 @@ export default function ResultPanel({ data, onExportPDF, onClear }) {
           percentage means that factor had a greater influence on the
           classification.
         </p>
-        {imp.slice(0, 5).map((f) => (
-          <ImpBar key={f.feature} label={f.label} pct={f.pct} maxPct={maxImp} />
+        {imp.slice(0, 5).map((f, i) => (
+          <ImpBar key={i} label={f.label} pct={f.pct} maxPct={maxImp} />
         ))}
 
         <Divider />
 
         {/* ── Suggestions ── */}
-        <SLabel>Personalised coping suggestions</SLabel>
+        <SLabel>Personalised recommendations</SLabel>
         {sugs.map((s, i) => (
           <SugItem key={i} icon={s.icon} category={s.category} text={s.text} />
         ))}
@@ -148,11 +179,11 @@ export default function ResultPanel({ data, onExportPDF, onClear }) {
         {diseaseRisk && diseaseRisk.length > 0 && (
           <>
             <Divider />
-            <SLabel>Potential disease risk assessment</SLabel>
+            <SLabel>Potential risk assessment</SLabel>
             <p className={styles.impDesc}>
-              Based on your reported symptoms and metrics, the following conditions
-              may warrant attention. This is not a diagnosis — consult a doctor for
-              any concerns.
+              Based on your reported metrics, the following conditions may
+              warrant attention. This is not a diagnosis — consult a doctor
+              for any concerns.
             </p>
             {diseaseRisk.map((d, i) => (
               <DiseaseRiskCard
@@ -180,8 +211,8 @@ export default function ResultPanel({ data, onExportPDF, onClear }) {
             style={{ flexShrink: 0, marginTop: 1, color: "var(--accent)" }}
           />
           This tool is for informational purposes only and does not constitute
-          medical advice. If you are experiencing severe distress, please
-          consult a qualified healthcare professional.
+          medical advice. If you are experiencing distress, please consult a
+          qualified mental health professional.
         </div>
       </Card>
     </div>

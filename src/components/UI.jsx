@@ -25,15 +25,39 @@ export function Pill({ children, blue = false }) {
   );
 }
 
-/* ── Stress level badge ── */
+/* ── Prediction badge (handles both stress levels and depression labels) ── */
 export function StressBadge({ level }) {
-  const cls =
-    level === "Low"
-      ? styles.sbOk
-      : level === "Moderate"
-        ? styles.sbWarn
-        : styles.sbDanger;
-  return <span className={`${styles.stressBadge} ${cls}`}>{level} Stress</span>;
+  const isOk     = level === "Low"  || level === "No Depression";
+  const isWarn   = level === "Moderate";
+  const isDanger = level === "High" || level === "Depression";
+  const cls = isOk ? styles.sbOk : isWarn ? styles.sbWarn : styles.sbDanger;
+  return <span className={`${styles.stressBadge} ${cls}`}>{level}</span>;
+}
+
+/* ── Option chip group (radio-like selector) ── */
+export function OptionField({ label, options, value, onChange, icon: Icon }) {
+  return (
+    <div className={styles.field}>
+      <div className={styles.fieldTop}>
+        <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {Icon && <Icon size={13} strokeWidth={2.5} style={{ color: "var(--accent)", flexShrink: 0 }} />}
+          {label}
+        </label>
+      </div>
+      <div className={styles.optionChips}>
+        {options.map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            className={`${styles.optionChip} ${value === opt ? styles.optionChipActive : ""}`}
+            onClick={() => onChange(opt)}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 /* ── Slider field ── */

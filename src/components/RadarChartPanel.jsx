@@ -9,11 +9,11 @@ import {
 } from "recharts";
 
 const AXES = [
-  { key: "sleep", label: "Sleep" },
-  { key: "anxiety", label: "Anxiety" },
-  { key: "social", label: "Social" },
-  { key: "workload", label: "Workload" },
-  { key: "mood", label: "Mood" },
+  { key: "academic",     label: "Academic" },
+  { key: "financial",    label: "Financial" },
+  { key: "sleep",        label: "Sleep" },
+  { key: "workload",     label: "Workload" },
+  { key: "satisfaction", label: "Satisfaction" },
 ];
 
 export default function RadarChartPanel({ scores }) {
