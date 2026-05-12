@@ -39,23 +39,23 @@ MODEL_DIR = os.path.join(ML_DIR, "model")
 # ─────────────────────────────────────────────
 COPING = {
     "No Depression": [
-        {"category": "Maintain Your Balance", "icon": "✅",
+        {"category": "Maintain Your Balance",
          "text": "You're showing resilience. Keep your current routines of adequate sleep, balanced meals, and social connection."},
-        {"category": "Stay Physically Active", "icon": "🏃",
+        {"category": "Stay Physically Active",
          "text": "Regular exercise (30 min/day) is a powerful preventive measure — it boosts mood and reduces future risk."},
-        {"category": "Academic Balance", "icon": "📚",
+        {"category": "Academic Balance",
          "text": "Take regular study breaks. The Pomodoro technique (25 min on, 5 min off) prevents cognitive burnout."},
-        {"category": "Stay Connected", "icon": "🤝",
+        {"category": "Stay Connected",
          "text": "Nurture your social network. Strong relationships act as a long-term buffer against depression."},
     ],
     "Depression": [
-        {"category": "Seek Professional Help", "icon": "🏥",
+        {"category": "Seek Professional Help", 
          "text": "Consider speaking with a counselor, therapist, or psychiatrist. Reaching out is a sign of strength, not weakness."},
-        {"category": "Reduce Your Load", "icon": "📋",
+        {"category": "Reduce Your Load", 
          "text": "Talk to your academic advisor or employer about workload adjustments. Protecting your mental health comes first."},
-        {"category": "Prioritise Sleep", "icon": "😴",
+        {"category": "Prioritise Sleep", 
          "text": "Aim for 7–9 hours of sleep each night. A consistent sleep schedule significantly improves mood regulation."},
-        {"category": "Build Your Support Network", "icon": "💬",
+        {"category": "Build Your Support Network", 
          "text": "Reach out to a trusted friend, family member, or helpline. Isolation worsens depression — connection heals it."},
     ],
 }
@@ -149,7 +149,6 @@ def compute_disease_risk(ui: dict) -> list:
         risks.append({
             "condition": "Academic Burnout",
             "risk":      "High" if burnout > 0.68 else "Moderate",
-            "icon":      "🔥",
             "indicator": "High academic pressure combined with long study hours and low satisfaction signals burnout.",
         })
 
@@ -159,7 +158,6 @@ def compute_disease_risk(ui: dict) -> list:
         risks.append({
             "condition": "Anxiety Disorder",
             "risk":      "High" if anxiety > 0.68 else "Moderate",
-            "icon":      "😰",
             "indicator": "Persistent academic, work, and financial pressure are major risk factors for anxiety disorder.",
         })
 
@@ -168,7 +166,6 @@ def compute_disease_risk(ui: dict) -> list:
         risks.append({
             "condition": "Sleep Disorder / Insomnia",
             "risk":      "High" if sleep == "Less than 5 hours" else "Moderate",
-            "icon":      "😴",
             "indicator": f"Sleeping {sleep} is below the recommended 7–9 hours and worsens depression and cognitive function.",
         })
 
@@ -177,7 +174,6 @@ def compute_disease_risk(ui: dict) -> list:
         risks.append({
             "condition": "Nutritional Imbalance",
             "risk":      "Moderate",
-            "icon":      "🥗",
             "indicator": "Poor dietary habits are linked to increased depression risk and reduced cognitive performance.",
         })
 
@@ -187,7 +183,6 @@ def compute_disease_risk(ui: dict) -> list:
         risks.append({
             "condition": "Hereditary Depression Risk",
             "risk":      "High" if fam_score > 0.72 else "Moderate",
-            "icon":      "🧬",
             "indicator": "Family history of mental illness significantly raises personal risk. Proactive monitoring is advised.",
         })
 
@@ -196,7 +191,6 @@ def compute_disease_risk(ui: dict) -> list:
         risks.append({
             "condition": "Mental Health Crisis Risk",
             "risk":      "High",
-            "icon":      "🛡️",
             "indicator": "A history of suicidal thoughts requires professional mental health support. Please consult a specialist.",
         })
 
@@ -205,7 +199,6 @@ def compute_disease_risk(ui: dict) -> list:
         risks.append({
             "condition": "Academic Stress Syndrome",
             "risk":      "Moderate",
-            "icon":      "📚",
             "indicator": "Low CGPA combined with high academic pressure creates a cycle of stress and poor performance.",
         })
 
@@ -214,7 +207,6 @@ def compute_disease_risk(ui: dict) -> list:
         risks.append({
             "condition": "Financial Stress Syndrome",
             "risk":      "High" if financial > 4.5 else "Moderate",
-            "icon":      "💸",
             "indicator": "Severe financial stress combined with low job satisfaction is a significant depression trigger.",
         })
 
@@ -222,7 +214,6 @@ def compute_disease_risk(ui: dict) -> list:
         risks.append({
             "condition": "No Significant Risk Detected",
             "risk":      "Low",
-            "icon":      "✅",
             "indicator": "Your current metrics suggest a balanced lifestyle. Continue maintaining your healthy habits.",
         })
 
@@ -362,7 +353,6 @@ def export_pdf():
 
         story.append(P("Personalised Recommendations", 12, bold=True, space=6))
         for s in sugs:
-            story.append(P(f'<b>{s["icon"]} {s["category"]}</b>', 10, color="#c8440a", space=2))
             story.append(P(s["text"], 10, space=10))
 
         story += [
