@@ -16,24 +16,24 @@ import styles from "./ResultPanel.module.css";
 
 const PROB_COLORS = {
   "No Depression": "#22c55e",
-  "Depression":    "#ef4444",
-  "Low":           "#22c55e",
-  "Moderate":      "#f59e0b",
-  "High":          "#ef4444",
+  "Depression": "#ef4444",
+  "Low": "#22c55e",
+  "Moderate": "#f59e0b",
+  "High": "#ef4444",
 };
 
 const LEVEL_COLORS = {
   "No Depression": "var(--ok)",
-  "Depression":    "var(--danger)",
-  "Low":           "var(--ok)",
-  "Moderate":      "var(--warn)",
-  "High":          "var(--danger)",
+  "Depression": "var(--danger)",
+  "Low": "var(--ok)",
+  "Moderate": "var(--warn)",
+  "High": "var(--danger)",
 };
 
 const RISK_COLORS = {
-  Low:      { bg: "#f0fdf4", border: "#86efac", text: "#15803d" },
+  Low: { bg: "#f0fdf4", border: "#86efac", text: "#15803d" },
   Moderate: { bg: "#fffbeb", border: "#fcd34d", text: "#b45309" },
-  High:     { bg: "#fef2f2", border: "#fca5a5", text: "#b91c1c" },
+  High: { bg: "#fef2f2", border: "#fca5a5", text: "#b91c1c" },
 };
 
 function DepressionAlert() {
@@ -100,8 +100,8 @@ export default function ResultPanel({ data, onExportPDF, onClear }) {
 
   const isDepression = stressLevel === "Depression";
   const probs = probabilities || {};
-  const imp   = featureImportance || [];
-  const sugs  = suggestions || [];
+  const imp = featureImportance || [];
+  const sugs = suggestions || [];
   const maxImp = imp.length ? imp[0].pct : 1;
   const probEntries = Object.entries(probs);
 

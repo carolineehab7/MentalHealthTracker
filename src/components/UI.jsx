@@ -27,8 +27,8 @@ export function Pill({ children, blue = false }) {
 
 /* ── Prediction badge (handles both stress levels and depression labels) ── */
 export function StressBadge({ level }) {
-  const isOk     = level === "Low"  || level === "No Depression";
-  const isWarn   = level === "Moderate";
+  const isOk = level === "Low" || level === "No Depression";
+  const isWarn = level === "Moderate";
   const isDanger = level === "High" || level === "Depression";
   const cls = isOk ? styles.sbOk : isWarn ? styles.sbWarn : styles.sbDanger;
   return <span className={`${styles.stressBadge} ${cls}`}>{level}</span>;
