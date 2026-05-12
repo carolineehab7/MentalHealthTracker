@@ -14,13 +14,12 @@ import { getHistory, clearHistory } from "../hooks/usePredict";
 import styles from "./HistoryPage.module.css";
 
 /* ── Helpers ── */
-const LEVEL_NUM = { Low: 1, Moderate: 2, High: 3 };
-const NUM_LEVEL = { 1: "Low", 2: "Moderate", 3: "High" };
-const DOT_COLOR = { Low: "#059669", Moderate: "#d97706", High: "#dc2626" };
+const LEVEL_NUM = { "No Depression": 1, "Depression": 2 };
+const NUM_LEVEL = { 1: "No Depression", 2: "Depression" };
+const DOT_COLOR = { "No Depression": "#059669", "Depression": "#dc2626" };
 const LVL_COLOR = {
-  Low: "var(--ok)",
-  Moderate: "var(--warn)",
-  High: "var(--danger)",
+  "No Depression": "var(--ok)",
+  "Depression": "var(--danger)",
 };
 
 /* ── Custom tooltip for chart ── */
@@ -31,7 +30,7 @@ function ChartTooltip({ active, payload }) {
     <div className={styles.tooltip}>
       <div className={styles.ttDate}>{d.dateLabel}</div>
       <div className={styles.ttLevel} style={{ color: DOT_COLOR[d.level] }}>
-        {d.level} Stress
+        {d.level}
       </div>
       <div className={styles.ttConf}>{d.confidence}% confidence</div>
     </div>
@@ -73,7 +72,7 @@ export default function HistoryPage() {
       <div className={styles.page}>
         <div className={styles.hero}>
           <Pill blue>Tracking</Pill>
-          <h1 className={styles.h1}>Your stress history</h1>
+          <h1 className={styles.h1}>Your depression history</h1>
         </div>
         <Card>
           <div className={styles.empty}>
@@ -106,14 +105,14 @@ export default function HistoryPage() {
           day: "numeric",
           month: "short",
         }),
-        value: LEVEL_NUM[h.stressLevel],
+        value: LEVEL_NUM[h.stressLevel] || 1,
         level: h.stressLevel,
         confidence: h.confidence,
       };
     });
 
   /* ── Summary counts ── */
-  const counts = { Low: 0, Moderate: 0, High: 0 };
+  const counts = { "No Depression": 0, "Depression": 0 };
   history.forEach((h) => {
     counts[h.stressLevel] = (counts[h.stressLevel] || 0) + 1;
   });
@@ -124,7 +123,7 @@ export default function HistoryPage() {
       {/* ── Hero ── */}
       <div className={styles.hero}>
         <Pill blue>Tracking</Pill>
-        <h1 className={styles.h1}>Your stress history</h1>
+        <h1 className={styles.h1}>Your depression history</h1>
         <p className={styles.sub}>
           Every completed assessment is saved automatically so you can monitor
           your wellbeing over time.
@@ -148,15 +147,15 @@ export default function HistoryPage() {
         </Card>
         <Card className={styles.summaryCard}>
           <div className={styles.summaryVal} style={{ color: "var(--danger)" }}>
-            {counts.High}
+            {counts["Depression"]}
           </div>
-          <div className={styles.summaryLbl}>High stress sessions</div>
+          <div className={styles.summaryLbl}>Depressed results</div>
         </Card>
       </div>
 
       {/* ── Trend chart ── */}
       <Card>
-        <SLabel>Stress trend — last {chartData.length} assessments</SLabel>
+        <SLabel>Depression trend — last {chartData.length} assessments</SLabel>
         <div className={styles.chartWrap}>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart
@@ -171,8 +170,8 @@ export default function HistoryPage() {
                 axisLine={false}
               />
               <YAxis
-                domain={[0.5, 3.5]}
-                ticks={[1, 2, 3]}
+                domain={[0.8, 2.2]}
+                ticks={[1, 2]}
                 tickFormatter={(v) => NUM_LEVEL[v] || ""}
                 tick={{ fontSize: 11, fill: "#94a3b8", fontFamily: "Inter" }}
                 tickLine={false}
