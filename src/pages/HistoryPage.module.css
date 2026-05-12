@@ -1,23 +1,50 @@
 .page {
-  max-width: 760px;
+  max-width: 780px;
   margin: 0 auto;
   padding: 2.5rem 1.5rem 5rem;
 }
 
-.hero { margin-bottom: 1.75rem; }
+.hero {
+  margin-bottom: 2rem;
+  animation: fadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 
 .h1 {
-  font-family: 'DM Serif Display', serif;
-  font-size: 32px;
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  margin-bottom: 8px;
+  font-family: "Sora", "Inter", sans-serif;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 60%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .sub {
   font-size: 15px;
   color: var(--text2);
-  line-height: 1.65;
+  line-height: 1.7;
 }
 
 /* ── Summary cards ── */
@@ -30,59 +57,129 @@
 
 .summaryCard {
   text-align: center;
-  padding: 1.25rem 1rem !important;
+  padding: 1.5rem 1rem !important;
   margin-bottom: 0 !important;
+  background: linear-gradient(145deg, #fff 0%, var(--accent-l) 100%) !important;
 }
 
 .summaryVal {
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 
 .summaryLbl {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--text3);
-  margin-top: 4px;
+  margin-top: 5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
 }
 
 /* ── Chart ── */
-.chartWrap { margin: 0 -0.25rem; }
+.chartWrap {
+  margin: 0 -0.25rem;
+  animation: fadeIn 0.6s ease both;
+}
 
 /* ── History list ── */
 .histItem {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 13px 0;
+  padding: 14px 0;
   border-bottom: 1px solid var(--border);
+  animation: fadeUp 0.4s ease both;
+  transition: padding-left 0.18s;
 }
-.histItem:last-child { border-bottom: none; }
+.histItem:hover {
+  padding-left: 4px;
+}
+.histItem:last-child {
+  border-bottom: none;
+}
 
-.histMeta { margin-left: auto; text-align: right; }
-.histDate  { font-size: 13px; color: var(--text2); }
-.histConf  { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.histMeta {
+  margin-left: auto;
+  text-align: right;
+}
+.histDate {
+  font-size: 13px;
+  color: var(--text2);
+  font-weight: 500;
+}
+.histConf {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 2px;
+}
 
 /* ── Tooltip ── */
 .tooltip {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--r);
-  padding: 10px 14px;
-  box-shadow: var(--shadow);
+  padding: 12px 16px;
+  box-shadow: var(--shadow-lg);
 }
-.ttDate  { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
-.ttLevel { font-size: 14px; font-weight: 700; }
-.ttConf  { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.ttDate {
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ttLevel {
+  font-size: 14px;
+  font-weight: 700;
+}
+.ttConf {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 3px;
+}
 
 /* ── Empty state ── */
-.empty { text-align: center; padding: 3rem 1rem; }
-.emptyIcon  { font-size: 44px; margin-bottom: 12px; }
-.emptyTitle { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
-.emptySub   { font-size: 14px; color: var(--text2); line-height: 1.6; }
+.empty {
+  text-align: center;
+  padding: 4rem 1rem;
+}
+.emptyIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: var(--accent-l);
+  border: 1px solid rgba(37, 99, 235, 0.15);
+  border-radius: 18px;
+  margin: 0 auto 18px;
+  color: var(--accent);
+}
+.emptyTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.emptySub {
+  font-size: 14px;
+  color: var(--text3);
+  line-height: 1.7;
+  max-width: 380px;
+  margin: 0 auto;
+}
 
 @media (max-width: 520px) {
-  .page       { padding: 1.5rem 1rem 4rem; }
-  .h1         { font-size: 26px; }
-  .summaryRow { grid-template-columns: 1fr 1fr; }
+  .page {
+    padding: 1.5rem 1rem 4rem;
+  }
+  .h1 {
+    font-size: 28px;
+  }
+  .summaryRow {
+    grid-template-columns: 1fr 1fr;
+  }
 }

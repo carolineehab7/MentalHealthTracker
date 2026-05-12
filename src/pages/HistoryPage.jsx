@@ -1,23 +1,32 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from "react";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer,
-} from 'recharts'
-import { Trash2 } from 'lucide-react'
-import { Card, SLabel, Pill, StressBadge, BtnOutline } from '../components/UI'
-import { getHistory, clearHistory } from '../hooks/usePredict'
-import styles from './HistoryPage.module.css'
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { Trash2, BarChart3 } from "lucide-react";
+import { Card, SLabel, Pill, StressBadge, BtnOutline } from "../components/UI";
+import { getHistory, clearHistory } from "../hooks/usePredict";
+import styles from "./HistoryPage.module.css";
 
 /* ── Helpers ── */
-const LEVEL_NUM  = { Low: 1, Moderate: 2, High: 3 }
-const NUM_LEVEL  = { 1: 'Low', 2: 'Moderate', 3: 'High' }
-const DOT_COLOR  = { Low: '#22c55e', Moderate: '#f59e0b', High: '#ef4444' }
-const LVL_COLOR  = { Low: 'var(--ok)', Moderate: 'var(--warn)', High: 'var(--danger)' }
+const LEVEL_NUM = { Low: 1, Moderate: 2, High: 3 };
+const NUM_LEVEL = { 1: "Low", 2: "Moderate", 3: "High" };
+const DOT_COLOR = { Low: "#059669", Moderate: "#d97706", High: "#dc2626" };
+const LVL_COLOR = {
+  Low: "var(--ok)",
+  Moderate: "var(--warn)",
+  High: "var(--danger)",
+};
 
 /* ── Custom tooltip for chart ── */
 function ChartTooltip({ active, payload }) {
-  if (!active || !payload?.length) return null
-  const d = payload[0].payload
+  if (!active || !payload?.length) return null;
+  const d = payload[0].payload;
   return (
     <div className={styles.tooltip}>
       <div className={styles.ttDate}>{d.dateLabel}</div>
@@ -26,32 +35,35 @@ function ChartTooltip({ active, payload }) {
       </div>
       <div className={styles.ttConf}>{d.confidence}% confidence</div>
     </div>
-  )
+  );
 }
 
 /* ── Coloured dots on chart ── */
 function ColorDot({ cx, cy, payload }) {
   return (
     <circle
-      cx={cx} cy={cy} r={6}
-      fill={DOT_COLOR[payload.level] || '#888'}
-      stroke="#fff" strokeWidth={2}
+      cx={cx}
+      cy={cy}
+      r={6}
+      fill={DOT_COLOR[payload.level] || "#888"}
+      stroke="#fff"
+      strokeWidth={2}
     />
-  )
+  );
 }
 
 /* ── Main page ── */
 export default function HistoryPage() {
-  const [history, setHistory] = useState([])
+  const [history, setHistory] = useState([]);
 
   useEffect(() => {
-    setHistory(getHistory())
-  }, [])
+    setHistory(getHistory());
+  }, []);
 
   function handleClear() {
-    if (window.confirm('Clear all saved history?')) {
-      clearHistory()
-      setHistory([])
+    if (window.confirm("Clear all saved history?")) {
+      clearHistory();
+      setHistory([]);
     }
   }
 
@@ -65,7 +77,9 @@ export default function HistoryPage() {
         </div>
         <Card>
           <div className={styles.empty}>
-            <div className={styles.emptyIcon}>📊</div>
+            <div className={styles.emptyIcon}>
+              <BarChart3 size={28} />
+            </div>
             <p className={styles.emptyTitle}>No assessments yet</p>
             <p className={styles.emptySub}>
               Complete your first assessment on the Assessment tab and your
@@ -74,40 +88,46 @@ export default function HistoryPage() {
           </div>
         </Card>
       </div>
-    )
+    );
   }
 
   /* ── Build chart data — last 10 entries in chronological order ── */
   const chartData = [...history]
     .reverse()
     .slice(-10)
-    .map(h => {
-      const d = new Date(h.date)
+    .map((h) => {
+      const d = new Date(h.date);
       return {
-        dateLabel: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-                 + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-        shortDate: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-        value:     LEVEL_NUM[h.stressLevel],
-        level:     h.stressLevel,
+        dateLabel:
+          d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) +
+          " " +
+          d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
+        shortDate: d.toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "short",
+        }),
+        value: LEVEL_NUM[h.stressLevel],
+        level: h.stressLevel,
         confidence: h.confidence,
-      }
-    })
+      };
+    });
 
   /* ── Summary counts ── */
-  const counts = { Low: 0, Moderate: 0, High: 0 }
-  history.forEach(h => { counts[h.stressLevel] = (counts[h.stressLevel] || 0) + 1 })
-  const latest = history[0]
+  const counts = { Low: 0, Moderate: 0, High: 0 };
+  history.forEach((h) => {
+    counts[h.stressLevel] = (counts[h.stressLevel] || 0) + 1;
+  });
+  const latest = history[0];
 
   return (
     <div className={styles.page}>
-
       {/* ── Hero ── */}
       <div className={styles.hero}>
         <Pill blue>Tracking</Pill>
         <h1 className={styles.h1}>Your stress history</h1>
         <p className={styles.sub}>
-          Every completed assessment is saved automatically so you can
-          monitor your wellbeing over time.
+          Every completed assessment is saved automatically so you can monitor
+          your wellbeing over time.
         </p>
       </div>
 
@@ -127,7 +147,7 @@ export default function HistoryPage() {
           <div className={styles.summaryLbl}>Latest result</div>
         </Card>
         <Card className={styles.summaryCard}>
-          <div className={styles.summaryVal} style={{ color: 'var(--danger)' }}>
+          <div className={styles.summaryVal} style={{ color: "var(--danger)" }}>
             {counts.High}
           </div>
           <div className={styles.summaryLbl}>High stress sessions</div>
@@ -146,15 +166,15 @@ export default function HistoryPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis
                 dataKey="shortDate"
-                tick={{ fontSize: 11, fill: '#9c968f', fontFamily: 'DM Sans' }}
+                tick={{ fontSize: 11, fill: "#94a3b8", fontFamily: "Inter" }}
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
                 domain={[0.5, 3.5]}
                 ticks={[1, 2, 3]}
-                tickFormatter={v => NUM_LEVEL[v] || ''}
-                tick={{ fontSize: 11, fill: '#9c968f', fontFamily: 'DM Sans' }}
+                tickFormatter={(v) => NUM_LEVEL[v] || ""}
+                tick={{ fontSize: 11, fill: "#94a3b8", fontFamily: "Inter" }}
                 tickLine={false}
                 axisLine={false}
               />
@@ -162,7 +182,7 @@ export default function HistoryPage() {
               <Line
                 type="monotone"
                 dataKey="value"
-                stroke="#1d4ed8"
+                stroke="#2563eb"
                 strokeWidth={2.5}
                 dot={<ColorDot />}
                 activeDot={false}
@@ -176,18 +196,29 @@ export default function HistoryPage() {
       <Card>
         <SLabel>All assessments ({history.length})</SLabel>
         {history.map((h, i) => {
-          const d       = new Date(h.date)
-          const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-          const timeStr = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+          const d = new Date(h.date);
+          const dateStr = d.toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          });
+          const timeStr = d.toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
           return (
             <div key={i} className={styles.histItem}>
               <StressBadge level={h.stressLevel} />
               <div className={styles.histMeta}>
-                <div className={styles.histDate}>{dateStr} at {timeStr}</div>
-                <div className={styles.histConf}>{h.confidence}% confidence</div>
+                <div className={styles.histDate}>
+                  {dateStr} at {timeStr}
+                </div>
+                <div className={styles.histConf}>
+                  {h.confidence}% confidence
+                </div>
               </div>
             </div>
-          )
+          );
         })}
       </Card>
 
@@ -195,7 +226,6 @@ export default function HistoryPage() {
       <BtnOutline onClick={handleClear} icon={<Trash2 size={15} />}>
         Clear all history
       </BtnOutline>
-
     </div>
-  )
+  );
 }
