@@ -288,7 +288,7 @@ def export_pdf():
         from reportlab.lib.units       import cm
         from reportlab.platypus        import (SimpleDocTemplate, Paragraph,
                                Spacer, Table, TableStyle,
-                               HRFlowable, Image)
+                               HRFlowable, Image, KeepInFrame)
         from reportlab.graphics.shapes import Drawing, Rect
         from reportlab.graphics.charts.barcharts import VerticalBarChart
         from reportlab.graphics.charts.piecharts import Pie
@@ -311,7 +311,7 @@ def export_pdf():
         BODY_FONT = "Times-Roman"
         BOLD_FONT = "Times-Bold"
         ITALIC_FONT = "Times-Italic"
-        BASE_SIZE = 10
+        BASE_SIZE = 13
         BASE_COLOR = "#1f2937"
         ASSET_DIR = os.path.abspath(os.path.join(ML_DIR, "..", "src", "assets"))
 
@@ -319,13 +319,13 @@ def export_pdf():
             return Paragraph(text, ParagraphStyle(
                 "x", fontSize=size, leading=size + 2, spaceAfter=space,
                 fontName=BOLD_FONT if bold else BODY_FONT,
-                textColor=colors.HexColor(color),
+                textColor=colors.HexColor(color), alignment=TA_CENTER,
             ))
 
         small = ParagraphStyle(
             "small", parent=styles["Normal"], fontSize=BASE_SIZE - 1,
             leading=BASE_SIZE + 1, textColor=colors.HexColor(BASE_COLOR),
-            fontName=BODY_FONT,
+            fontName=BODY_FONT, alignment=TA_CENTER,
         )
         rec_style = ParagraphStyle(
             "rec", parent=styles["Normal"], fontSize=BASE_SIZE,
@@ -336,7 +336,12 @@ def export_pdf():
         help_title = ParagraphStyle(
             "help_title", parent=styles["Normal"], fontSize=BASE_SIZE + 2,
             leading=BASE_SIZE + 4, textColor=colors.HexColor(BASE_COLOR),
-            fontName=BOLD_FONT,
+            fontName=BOLD_FONT, alignment=TA_CENTER,
+        )
+        section_title = ParagraphStyle(
+            "section_title", parent=styles["Normal"], fontSize=BASE_SIZE + 2,
+            leading=BASE_SIZE + 4, textColor=colors.HexColor(BASE_COLOR),
+            fontName=BOLD_FONT, alignment=TA_CENTER,
         )
         def short_label(text: str, max_len: int = 22) -> str:
             if not text:
@@ -364,26 +369,26 @@ def export_pdf():
             {
                 "name": "Befrienders Worldwide",
                 "meta": "Global",
-                "url": "https://www.befrienders.org/",
                 "desc": "Find support lines in your country.",
+                "url": "https://www.befrienders.org/",
             },
             {
                 "name": "International Association for Suicide Prevention",
                 "meta": "Global",
-                "url": "https://www.iasp.info/resources/Crisis_Centres/",
                 "desc": "Directory of crisis centers worldwide.",
+                "url": "https://www.iasp.info/resources/Crisis_Centres/",
             },
             {
                 "name": "WHO Mental Health Resources",
                 "meta": "Global",
-                "url": "https://www.who.int/health-topics/mental-health#tab=tab_1",
                 "desc": "Guidance and resources for mental health.",
+                "url": "https://www.who.int/health-topics/mental-health#tab=tab_1",
             },
             {
                 "name": "988 Lifeline",
                 "meta": "United States",
-                "url": "https://988lifeline.org/",
                 "desc": "Call or text 988 for 24/7 support.",
+                "url": "https://988lifeline.org/",
             },
         ]
 
@@ -402,24 +407,24 @@ def export_pdf():
                 return None
 
             labels = [short_label(k, 16) for k in raw_labels]
-            drawing = Drawing(width, 160)
+            drawing = Drawing(width, 150)
             chart = VerticalBarChart()
-            chart.x = 40
-            chart.y = 20
+            chart.width = max(200, width - 110)
+            chart.x = max((width - chart.width) / 2, 0)
+            chart.y = 16
             chart.height = 100
-            chart.width = max(220, width - 70)
             chart.data = [values]
             chart.valueAxis.valueMin = 0
             chart.valueAxis.valueMax = 100
             chart.valueAxis.valueStep = 20
-            chart.valueAxis.labels.fontSize = 6
+            chart.valueAxis.labels.fontSize = 8
             chart.categoryAxis.categoryNames = labels
-            chart.categoryAxis.labels.fontSize = 7
-            chart.categoryAxis.labels.angle = 30
-            chart.categoryAxis.labels.dy = -10
-            chart.barWidth = 18
-            chart.groupSpacing = 10
-            chart.barSpacing = 4
+            chart.categoryAxis.labels.fontSize = 9
+            chart.categoryAxis.labels.angle = 25
+            chart.categoryAxis.labels.dy = -8
+            chart.barWidth = 16
+            chart.groupSpacing = 8
+            chart.barSpacing = 3
 
             for i, label in enumerate(raw_labels):
                 chart.bars[(0, i)].fillColor = prob_colors.get(
@@ -427,7 +432,14 @@ def export_pdf():
                 )
 
             drawing.add(chart)
-            return drawing
+            wrapper = Table([[drawing]], colWidths=[width])
+            wrapper.setStyle(TableStyle([
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ]))
+            return wrapper
 
         def build_pie(importance: list, width: float):
             if not importance:
@@ -435,7 +447,7 @@ def export_pdf():
 
             data = [i.get("pct", 0) for i in importance]
             labels = [short_label(i.get("label", ""), 26) for i in importance]
-            chart_size = 140
+            chart_size = 120
             drawing = Drawing(chart_size, chart_size)
             pie = Pie()
             pie.x = 0
@@ -463,7 +475,7 @@ def export_pdf():
                     Paragraph(f"{label} ({data[i]}%)", small),
                 ])
 
-            legend_table = Table(legend_rows, colWidths=[0.35 * cm, width - 5 * cm])
+            legend_table = Table(legend_rows, colWidths=[0.35 * cm, width - 4.5 * cm])
             legend_table.setStyle(TableStyle([
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("LEFTPADDING", (0, 0), (-1, -1), 2),
@@ -472,9 +484,9 @@ def export_pdf():
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
             ]))
 
-            container = Table([[drawing, legend_table]], colWidths=[5 * cm, width - 5 * cm])
+            container = Table([[drawing, legend_table]], colWidths=[4.5 * cm, width - 4.5 * cm])
             container.setStyle(TableStyle([
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("LEFTPADDING", (0, 0), (-1, -1), 0),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 0),
             ]))
@@ -504,13 +516,13 @@ def export_pdf():
                 return None
 
             cells = []
-            for s in suggestions:
+            for s in suggestions[:4]:
                 icon = s.get("icon", "")
                 category = s.get("category", "").lower()
                 action = short_action(s.get("text", ""))
                 icon_path = icon_for_category(category)
                 if icon_path:
-                    icon_flowable = Image(icon_path, width=1.2 * cm, height=1.2 * cm)
+                    icon_flowable = Image(icon_path, width=1.0 * cm, height=1.0 * cm)
                 else:
                     icon_flowable = Paragraph(
                         f"<para align='center'><font size='14'>{icon}</font></para>",
@@ -529,8 +541,8 @@ def export_pdf():
                     cells[i + 1] if i + 1 < len(cells) else "",
                 ])
 
-            row_heights = [2.5 * cm] * len(rows)
-            table = Table(rows, colWidths=[8 * cm, 8 * cm], rowHeights=row_heights)
+            row_heights = [2.2 * cm] * len(rows)
+            table = Table(rows, colWidths=[doc.width / 2, doc.width / 2], rowHeights=row_heights)
             table.setStyle(TableStyle([
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("ALIGN", (0, 0), (-1, -1), "CENTER"),
@@ -541,85 +553,125 @@ def export_pdf():
             ]))
             return table
 
+        def build_help_header():
+            handshake_path = os.path.join(ASSET_DIR, "handshake.png")
+            if os.path.exists(handshake_path):
+                icon = Image(handshake_path, width=1.1 * cm, height=1.1 * cm)
+            else:
+                icon = Spacer(1, 1.1 * cm)
+
+            header = Table(
+                [[icon, Paragraph("Contact organizations for help", help_title)]],
+                colWidths=[1.1 * cm, doc.width - 1.1 * cm],
+            )
+            header.setStyle(TableStyle([
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("LEFTPADDING", (1, 0), (1, 0), 4),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ]))
+            return header
+
+        def build_help_cards(help_items: list):
+            if not help_items:
+                return None
+
+            cells = []
+            help_style = ParagraphStyle(
+                "help_card", parent=styles["Normal"], fontSize=BASE_SIZE - 1,
+                leading=BASE_SIZE + 1, textColor=colors.HexColor(BASE_COLOR),
+                fontName=BODY_FONT, alignment=TA_CENTER,
+            )
+            for org in help_items:
+                text = (
+                    f"<para align='center'><b>{org['name']}</b><br/>"
+                    f"<i>{org['meta']}</i><br/>"
+                    f"{org['desc']}<br/><font color='#2563eb'>{org['url']}</font></para>"
+                )
+                cell_text = Paragraph(text, help_style)
+                cells.append([cell_text])
+
+            rows = []
+            for i in range(0, len(cells), 2):
+                rows.append([
+                    cells[i][0],
+                    cells[i + 1][0] if i + 1 < len(cells) else "",
+                ])
+
+            row_heights = [2.2 * cm] * len(rows)
+            table = Table(rows, colWidths=[doc.width / 2, doc.width / 2], rowHeights=row_heights)
+            table.setStyle(TableStyle([
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ]))
+            return table
+
         story += [
-            P("Depression indications", 18, bold=True, space=4),
-            P(f"Generated: {ts}", BASE_SIZE - 1, color=BASE_COLOR, space=14),
+            P("Depression indications", 16, bold=True, space=2),
+            P(f"Generated: {ts}", BASE_SIZE - 1, color=BASE_COLOR, space=8),
             HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e8e4de")),
-            Spacer(1, 0.4*cm),
+            Spacer(1, 0.2 * cm),
         ]
 
         level_color = {"No Depression": "#15803d", "Depression": "#b91c1c"}.get(level, BASE_COLOR)
         story.append(P(f'Prediction: <font color="{level_color}"><b>{level}</b></font>'
-                   f'&nbsp;&nbsp;|&nbsp;&nbsp;Confidence: <b>{conf}%</b>', 12, space=14))
+                   f'&nbsp;&nbsp;|&nbsp;&nbsp;Confidence: <b>{conf}%</b>', 11, space=8))
 
-        story.append(P("Probability Distribution", 12, bold=True, space=6))
+        def section_block(title: str, body_flowable, height_cm: float, title_flowable=None, center=True):
+            if title_flowable is not None:
+                items = [title_flowable, Spacer(1, 0.15 * cm)]
+            else:
+                items = [Paragraph(title, section_title), Spacer(1, 0.15 * cm)] if title else []
+            if title in ("Personalised Recommendations", "Contact organizations for help"):
+                items.append(Spacer(1, 0.2 * cm))
+            if body_flowable:
+                items.append(body_flowable)
+            else:
+                items.append(P("No data available.", 9, color=BASE_COLOR, space=2))
+            items.append(Spacer(1, 0.05 * cm))
+            h_align = "CENTER" if center else "LEFT"
+            return KeepInFrame(doc.width, height_cm * cm, items, hAlign=h_align, vAlign="TOP", mode="shrink")
+
         hist = build_histogram(probs, doc.width)
-        if hist:
-            story += [hist, Spacer(1, 0.5*cm)]
-        else:
-            story += [P("No probability data available.", 10, color=BASE_COLOR, space=10)]
-
-        if imp:
-            story.append(P("Top Contributing Factors", 12, bold=True, space=6))
-            pie = build_pie(imp[:5], doc.width)
-            if pie:
-                story += [pie, Spacer(1, 0.5*cm)]
-            else:
-                story += [P("No contributing factor data available.", 10, color=BASE_COLOR, space=10)]
-
-        story.append(P("Personalised Recommendations", 12, bold=True, space=6))
+        pie = build_pie(imp[:5], doc.width) if imp else None
         rec_table = build_recommendations(sugs)
-        if rec_table:
-            story += [Spacer(1, 0.2*cm), rec_table, Spacer(1, 0.5*cm)]
-        else:
-            story += [P("No recommendations available.", 10, color=BASE_COLOR, space=10)]
+        help_table = build_help_cards(HELP_ORGS)
+        help_header = build_help_header()
 
-        if level == "Depression":
-            handshake_path = os.path.join(ASSET_DIR, "handshake.png")
-            if os.path.exists(handshake_path):
-                help_icon = Image(handshake_path, width=1.1 * cm, height=1.1 * cm)
-            else:
-                help_icon = Spacer(1, 1.1 * cm)
-            help_header = Table(
-                [[help_icon, Paragraph("Find Crisis Supports", help_title)]],
-                colWidths=[1.4 * cm, doc.width - 1.4 * cm],
-            )
-            help_header.setStyle(TableStyle([
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-            ]))
-            story += [help_header, Spacer(1, 0.2 * cm)]
-            help_rows = []
-            for org in HELP_ORGS:
-                left = Paragraph(
-                    f"<b>{org['name']}</b><br/><i>{org['meta']}</i>",
-                    small,
-                )
-                right = Paragraph(
-                    f"{org['desc']}<br/>{org['url']}",
-                    small,
-                )
-                help_rows.append([left, right])
-
-            help_table = Table(help_rows, colWidths=[6 * cm, 10 * cm])
-            help_table.setStyle(TableStyle([
-                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f8f7f4")),
-                ("ROWBACKGROUNDS", (0, 0), (-1, -1), [colors.HexColor("#f8f7f4"), colors.white]),
-                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e8e4de")),
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("PADDING", (0, 0), (-1, -1), 6),
-            ]))
-            story += [help_table, Spacer(1, 0.4*cm)]
+        section_height = 5.0
+        sections = Table(
+            [
+                [section_block("Probability Distribution", hist, section_height)],
+                [section_block("Top Contributing Factors", pie, section_height)],
+                [section_block("Personalised Recommendations", rec_table, section_height)],
+                [section_block("", help_table, section_height, title_flowable=help_header, center=False)],
+            ],
+            colWidths=[doc.width],
+            rowHeights=[section_height * cm] * 4,
+        )
+        sections.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("TOPPADDING", (0, 0), (-1, -1), 14),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 14),
+        ]))
+        story += [sections, Spacer(1, 0.2 * cm)]
 
         story += [
-            Spacer(1, 0.4*cm),
+            Spacer(1, 0.2 * cm),
             HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e8e4de")),
-            Spacer(1, 0.2*cm),
-                        P("This report is for informational purposes only and does not constitute "
-                            "medical advice. If you are experiencing distress, please consult a "
-                            "qualified mental health professional.", 8, color=BASE_COLOR),
+            Spacer(1, 0.1 * cm),
+            P("This report is for informational purposes only and does not constitute "
+              "medical advice. If you are experiencing distress, please consult a "
+              "qualified mental health professional.", 8, color=BASE_COLOR),
         ]
 
         doc.build(story)
