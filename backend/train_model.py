@@ -254,12 +254,13 @@ if __name__ == "__main__":
                          "test_acc": test_acc, "pipe": pipe}
         print(f"  {name:<22} CV={scores.mean():.3f}±{scores.std():.3f}  Test={test_acc:.3f}")
 
-    # 4. Pick best and tune if it's RF
-    best_name  = max(results, key=lambda k: results[k]["test_acc"])
+    # 4. Always use Random Forest — same accuracy as LR but far better-calibrated
+    #    probabilities (LR clusters near 50%, giving low/misleading confidence scores)
+    best_name  = "Random Forest"
     best_model = results[best_name]["pipe"]
-    print(f"\n[4/5] Best model: {best_name}")
+    print(f"\n[4/5] Best model: {best_name} (acc={results[best_name]['test_acc']:.3f})")
 
-    if best_name == "Random Forest":
+    if True:  # always tune RF
         print("  Tuning Random Forest...")
         preprocessor2 = _build_preprocessor(numeric_features, categorical_features)
         search = RandomizedSearchCV(
@@ -295,4 +296,4 @@ if __name__ == "__main__":
 
     print(f"  Test accuracy : {final_acc:.3f}")
     print(f"  Saved to      : {MODEL_DIR}/")
-    print("\n====== Done ====== → python app.py")
+    print("\n====== Done ====== -> python app.py")
