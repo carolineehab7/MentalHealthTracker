@@ -11,9 +11,9 @@ export default function App() {
       {/* ── SIDEBAR ── */}
       <aside className={styles.sidebar}>
         <div className={styles.brand}>
-          <span className={styles.brandIcon}>🧠</span>
+          <span className={styles.brandIcon}><img src="./../src/assets/brain.png" alt="MindCheck Logo" width="30" height="30" /></span>
           <div>
-            <div className={styles.brandName}>MindCheck</div>
+            <div className={styles.brandName}>Mind Check</div>
             <div className={styles.brandSub}>Depression Screener</div>
           </div>
         </div>
