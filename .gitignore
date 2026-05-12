@@ -5,3 +5,11 @@ build/
 .env.local
 *.log
 .DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# ML model artifacts — too large for GitHub (>100 MB)
+# Regenerate with: python backend/train_model.py
+backend/model/*.pkl
