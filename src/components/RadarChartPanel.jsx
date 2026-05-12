@@ -1,25 +1,29 @@
 import {
-  RadarChart, Radar,
-  PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-  ResponsiveContainer, Tooltip,
-} from 'recharts'
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
 
 const AXES = [
-  { key: 'sleep',    label: 'Sleep'    },
-  { key: 'anxiety',  label: 'Anxiety'  },
-  { key: 'social',   label: 'Social'   },
-  { key: 'workload', label: 'Workload' },
-  { key: 'mood',     label: 'Mood'     },
-]
+  { key: "sleep", label: "Sleep" },
+  { key: "anxiety", label: "Anxiety" },
+  { key: "social", label: "Social" },
+  { key: "workload", label: "Workload" },
+  { key: "mood", label: "Mood" },
+];
 
 export default function RadarChartPanel({ scores }) {
-  if (!scores) return null
+  if (!scores) return null;
 
   const data = AXES.map(({ key, label }) => ({
-    subject:  label,
-    value:    Math.round(scores[key] ?? 0),
+    subject: label,
+    value: Math.round(scores[key] ?? 0),
     fullMark: 100,
-  }))
+  }));
 
   return (
     <ResponsiveContainer width="100%" height={260}>
@@ -27,33 +31,39 @@ export default function RadarChartPanel({ scores }) {
         <PolarGrid stroke="rgba(0,0,0,0.08)" />
         <PolarAngleAxis
           dataKey="subject"
-          tick={{ fontSize: 12, fill: '#6b6560', fontFamily: 'DM Sans, sans-serif' }}
+          tick={{
+            fontSize: 12,
+            fill: "#475569",
+            fontFamily: "Inter, sans-serif",
+            fontWeight: 500,
+          }}
         />
         <PolarRadiusAxis
           angle={90}
           domain={[0, 100]}
           tickCount={4}
-          tick={{ fontSize: 10, fill: '#9c968f' }}
+          tick={{ fontSize: 10, fill: "#94a3b8" }}
         />
         <Radar
           dataKey="value"
-          stroke="#1d4ed8"
-          fill="#1d4ed8"
-          fillOpacity={0.13}
-          strokeWidth={2}
-          dot={{ r: 4, fill: '#1d4ed8', strokeWidth: 0 }}
+          stroke="#2563eb"
+          fill="#2563eb"
+          fillOpacity={0.12}
+          strokeWidth={2.5}
+          dot={{ r: 4, fill: "#2563eb", strokeWidth: 0 }}
         />
         <Tooltip
           contentStyle={{
-            background: '#faf9f7',
-            border: '1px solid rgba(28,25,22,0.1)',
-            borderRadius: 8,
+            background: "#ffffff",
+            border: "1px solid rgba(99,123,192,0.18)",
+            borderRadius: 10,
             fontSize: 13,
-            fontFamily: 'DM Sans, sans-serif',
+            fontFamily: "Inter, sans-serif",
+            boxShadow: "0 4px 20px rgba(15,23,42,0.1)",
           }}
-          formatter={(v) => [`${v} / 100`, 'Score']}
+          formatter={(v) => [`${v} / 100`, "Score"]}
         />
       </RadarChart>
     </ResponsiveContainer>
-  )
+  );
 }
