@@ -24,6 +24,7 @@ A full-stack web application for student depression risk assessment, combining a
 - [Coping Recommendations](#coping-recommendations)
 - [Disclaimer](#disclaimer)
 - [UI](#ui)
+- [PDF Sample](#pdf-sample)
 
 ---
 
@@ -681,7 +682,6 @@ MindCheck is a **screening tool only** and does not constitute a medical diagnos
 <img width="960" height="955" alt="image" src="https://github.com/user-attachments/assets/be1625e9-7d18-4f33-a6e9-04edcddd5710" />
 <img width="986" height="825" alt="image" src="https://github.com/user-attachments/assets/444d9355-a23a-4ee9-9ca3-5dcb62149105" />
 
-
-
-
-
+ ---
+ ## PDF Sample
+ <img width="969" height="1314" alt="Screenshot 2026-05-14 010442" src="https://github.com/user-attachments/assets/2dde5ee4-6b07-49bd-a9f8-f6b5c4a228ce" />
