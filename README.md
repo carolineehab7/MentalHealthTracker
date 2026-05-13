@@ -23,6 +23,7 @@ A full-stack web application for student depression risk assessment, combining a
 - [Disease Risk Assessment](#disease-risk-assessment)
 - [Coping Recommendations](#coping-recommendations)
 - [Disclaimer](#disclaimer)
+- [UI](#ui)
 
 ---
 
@@ -672,3 +673,15 @@ Strategies differ between **No Depression** (maintenance-focused advice) and **D
 ## Disclaimer
 
 MindCheck is a **screening tool only** and does not constitute a medical diagnosis. Results are based on statistical patterns learned from training data and should not replace consultation with a licensed mental health professional. If you are experiencing a mental health crisis, please contact a qualified healthcare provider or crisis helpline immediately.
+
+---
+## UI
+<img width="1248" height="1395" alt="image" src="https://github.com/user-attachments/assets/05d4fd49-114e-4929-91dd-39e8f020b4be" />
+<img width="994" height="1168" alt="image" src="https://github.com/user-attachments/assets/57e44c03-71fe-441b-a45f-2184364ca451" />
+<img width="960" height="955" alt="image" src="https://github.com/user-attachments/assets/be1625e9-7d18-4f33-a6e9-04edcddd5710" />
+<img width="986" height="825" alt="image" src="https://github.com/user-attachments/assets/444d9355-a23a-4ee9-9ca3-5dcb62149105" />
+
+
+
+
+
